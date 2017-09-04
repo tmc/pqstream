@@ -13,12 +13,29 @@ go get -u github.com/tmc/pqstream/cmd/{pqs,pqsd}
 connect the agent:
 
 ```sh
-pqsd -connect postgresql://user:pass@host/dbname
+$ pqsd -connect postgresql://user:pass@host/dbname
 ```
 
 connect the cli:
 ```sh
-pqs
+$ pqs
 ```
 
-at this point you will see streams of database operations rendered to stdout
+at this point you will see streams of database operations rendered to stdout:
+
+
+(in a psql shell):
+
+```sql
+a=> insert into notes values (DEFAULT, DEFAULT, 'here is an example note');
+INSERT 0 1
+a=> delete from notes where id=1;
+DELETE 1
+```
+
+our client should now show our operations:
+```sh
+$ pqs
+{"schema":"public","table":"notes","op":"INSERT","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
+{"schema":"public","table":"notes","op":"DELETE","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
+```
