@@ -21,8 +21,9 @@ import (
 )
 
 var (
-	pqsdAddr  = flag.String("connect", ":7000", "pqsd address")
-	debugAddr = flag.String("debugaddr", ":7001", "listen debug addr")
+	pqsdAddr    = flag.String("connect", ":7000", "pqsd address")
+	tableRegexp = flag.String("tables", ".*", "regexp of tables to match")
+	debugAddr   = flag.String("debugaddr", ":7001", "listen debug addr")
 )
 
 func main() {
@@ -40,7 +41,9 @@ func run(ctx context.Context) error {
 	}
 	defer conn.Close()
 
-	c, err := pqs.NewPQStreamClient(conn).Listen(ctx, &pqs.ListenRequest{})
+	c, err := pqs.NewPQStreamClient(conn).Listen(ctx, &pqs.ListenRequest{
+		TableRegexp: *tableRegexp,
+	})
 	if err != nil {
 		return err
 	}

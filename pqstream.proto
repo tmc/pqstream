@@ -9,7 +9,10 @@ service PQStream {
 }
 
 // A request to listen to database event streams.
-message ListenRequest {}
+message ListenRequest {
+  // if provided, this string will be used to match table names to track.
+  string table_regexp = 1;
+}
 
 // An operation in the database.
 enum Operation {

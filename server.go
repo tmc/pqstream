@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"regexp"
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
@@ -206,9 +207,15 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 func (s *Server) Listen(r *pqs.ListenRequest, srv pqs.PQStream_ListenServer) error {
 	ctx := srv.Context()
 	log.Printf("got listen request: %#v\n", r)
+	tableRe, err := regexp.Compile(r.TableRegexp)
+	if err != nil {
+		return err
+	}
 	events := make(chan *pqs.Event) // TODO(tmc): will likely buffer after benchmarking
 	s.subscribe <- &subscription{fn: func(e *pqs.Event) bool {
-		// TODO(tmc): predicate/filtering here
+		if !tableRe.MatchString(e.Table) {
+			return true
+		}
 		select {
 		case <-ctx.Done():
 			return false
