@@ -8,15 +8,20 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/jsonpb"
+
 	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/tmc/pqstream/pqs"
+
+	ptypes_struct "github.com/golang/protobuf/ptypes/struct"
 )
 
 const (
 	minReconnectInterval = time.Second
 	maxReconnectInterval = 10 * time.Second
 	channel              = "pqstream_notify"
+
+	fallbackIdColumnType = "integer" // TODO(tmc) parameterize
 )
 
 // subscription
@@ -136,6 +141,27 @@ func (s *Server) removeTrigger(table string) error {
 	return err
 }
 
+// fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit
+func (s *Server) fallbackLookup(e *pqs.Event) error {
+	rows, err := s.db.Query(fmt.Sprintf(sqlFetchRowById, e.Table, fallbackIdColumnType), e.Id)
+	if err != nil {
+		return errors.Wrap(err, "fallback query")
+	}
+	defer rows.Close()
+	if rows.Next() {
+		payload := ""
+		if err := rows.Scan(&payload); err != nil {
+			return errors.Wrap(err, "fallback scan")
+		} else {
+			e.Payload = &ptypes_struct.Struct{}
+			if err := jsonpb.UnmarshalString(payload, e.Payload); err != nil {
+				return errors.Wrap(err, "fallback unmarshal")
+			}
+		}
+	}
+	return nil
+}
+
 // HandleEvents processes events from the database and copies them to relevent clients.
 func (s *Server) HandleEvents(ctx context.Context) error {
 	subscribers := map[*subscription]bool{}
@@ -154,6 +180,12 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			e := &pqs.Event{}
 			if err := jsonpb.UnmarshalString(ev.Extra, e); err != nil {
 				return errors.Wrap(err, "jsonpb unmarshal")
+			}
+			if e.Payload == nil && e.Id != "" {
+				if err := s.fallbackLookup(e); err != nil {
+					log.Println("fallback lookup failed:", err)
+				}
+
 			}
 			for s := range subscribers {
 				if !s.fn(e) {
