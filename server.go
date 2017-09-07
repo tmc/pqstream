@@ -36,6 +36,8 @@ type Server struct {
 	l  *pq.Listener
 	db *sql.DB
 
+	tableRe *regexp.Regexp
+
 	//mu          sync.RWMutex // protects the following
 	//subscribers map[subscriberFunc]time.Time
 	subscribe chan *subscription
@@ -46,6 +48,13 @@ var _ pqs.PQStreamServer = (*Server)(nil)
 
 // ServerOption allows customization of a new server.
 type ServerOption func(*Server)
+
+// WithTableRegexp controls which tables are managed
+func WithTableRegexp(re *regexp.Regexp) ServerOption {
+	return func(s *Server) {
+		s.tableRe = re
+	}
+}
 
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
@@ -107,11 +116,14 @@ func (s *Server) tableNames() ([]string, error) {
 	}
 	var tableNames []string
 	for rows.Next() {
-		var s string
-		if err := rows.Scan(&s); err != nil {
+		var t string
+		if err := rows.Scan(&t); err != nil {
 			return nil, errors.Wrap(err, fmt.Sprintln("tableNames scan, after", len(tableNames)))
 		}
-		tableNames = append(tableNames, s)
+		if s.tableRe != nil && !s.tableRe.MatchString(t) {
+			continue
+		}
+		tableNames = append(tableNames, t)
 	}
 	return tableNames, nil
 }

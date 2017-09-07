@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -24,6 +25,7 @@ import (
 
 var (
 	postgresCluster = flag.String("connect", "", "postgresql cluster address")
+	tableRegexp     = flag.String("tables", ".*", "regexp of tables to manage")
 	remove          = flag.Bool("remove", false, "if true, remove triggers and exit")
 	grpcAddr        = flag.String("addr", ":7000", "listen addr")
 	debugAddr       = flag.String("debugaddr", ":7001", "listen debug addr")
@@ -47,7 +49,15 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	server, err := pqstream.NewServer(*postgresCluster)
+	tableRe, err := regexp.Compile(*tableRegexp)
+	if err != nil {
+		return err
+	}
+
+	opts := []pqstream.ServerOption{
+		pqstream.WithTableRegexp(tableRe),
+	}
+	server, err := pqstream.NewServer(*postgresCluster, opts...)
 	if err != nil {
 		return err
 	}
