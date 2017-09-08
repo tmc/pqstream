@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+which protoc || sudo apt-get install -y protobuf-compiler
+which protoc-gen-go || go get -v -u github.com/golang/protobuf/protoc-gen-go
+
+protoc --version
+go generate
+
+# if this exits non-zero then our generated code is out of date
+git diff --exit-code pqs
