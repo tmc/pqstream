@@ -2,6 +2,8 @@
 
 pqstream is a program that streams changes out of a postgres database with the intent of populating other systems and enabling stream processing of data sets.
 
+![ci status](https://circleci.com/gh/tmc/pqstream.svg?style=shield) ![report card](https://goreportcard.com/badge/github.com/tmc/pqstream)
+
 ## installation
 
 ```sh
