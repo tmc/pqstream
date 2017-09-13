@@ -41,6 +41,8 @@ type Server struct {
 	//mu          sync.RWMutex // protects the following
 	//subscribers map[subscriberFunc]time.Time
 	subscribe chan *subscription
+
+	redactionMap map[string]map[string][]string
 }
 
 // statically assert that Server satisifes pqs.PQStreamServer
@@ -56,10 +58,18 @@ func WithTableRegexp(re *regexp.Regexp) ServerOption {
 	}
 }
 
+// WithFieldRedactions controls which fields are redacted from the feed
+func WithFieldRedactions(r map[string]map[string][]string) ServerOption {
+	return func(s *Server) {
+		s.redactionMap = r
+	}
+}
+
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
-		subscribe: make(chan *subscription),
+		subscribe:    make(chan *subscription),
+		redactionMap: make(map[string]map[string][]string),
 	}
 	for _, o := range opts {
 		o(s)
@@ -175,6 +185,24 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 	return nil
 }
 
+// redactFields search through redactionMap if there's any redacted fields
+// specified that match the fields of the current event
+func (s *Server) redactFields(e *pqs.Event) {
+	tables, ok := s.redactionMap[e.GetSchema()]
+	if ok {
+		fields, ok := tables[e.GetTable()]
+		if ok {
+			for _, rf := range fields {
+				_, ok := e.Payload.Fields[rf]
+				if ok {
+					//remove field from payload
+					delete(e.Payload.Fields, rf)
+				}
+			}
+		}
+	}
+}
+
 // HandleEvents processes events from the database and copies them to relevent clients.
 func (s *Server) HandleEvents(ctx context.Context) error {
 	subscribers := map[*subscription]bool{}
@@ -194,6 +222,11 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			if err := jsonpb.UnmarshalString(ev.Extra, e); err != nil {
 				return errors.Wrap(err, "jsonpb unmarshal")
 			}
+
+			if e.Payload != nil {
+				s.redactFields(e)
+			}
+
 			if e.Payload == nil && e.Id != "" {
 				if err := s.fallbackLookup(e); err != nil {
 					log.Println("fallback lookup failed:", err)
