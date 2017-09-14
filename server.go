@@ -31,6 +31,10 @@ type subscription struct {
 	fn func(*pqs.Event) bool
 }
 
+// RedactionFields describes how redaction fields are specified
+// Top level map key is the schema, inner map key is the table and slice is the fields to redact
+type RedactionFields map[string]map[string][]string
+
 // Server implements PQStreamServer and manages both client connections and database event monitoring.
 type Server struct {
 	l  *pq.Listener
@@ -42,7 +46,7 @@ type Server struct {
 	//subscribers map[subscriberFunc]time.Time
 	subscribe chan *subscription
 
-	redactionMap map[string]map[string][]string
+	redactions RedactionFields
 }
 
 // statically assert that Server satisifes pqs.PQStreamServer
@@ -59,17 +63,17 @@ func WithTableRegexp(re *regexp.Regexp) ServerOption {
 }
 
 // WithFieldRedactions controls which fields are redacted from the feed
-func WithFieldRedactions(r map[string]map[string][]string) ServerOption {
+func WithFieldRedactions(r RedactionFields) ServerOption {
 	return func(s *Server) {
-		s.redactionMap = r
+		s.redactions = r
 	}
 }
 
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
-		subscribe:    make(chan *subscription),
-		redactionMap: make(map[string]map[string][]string),
+		subscribe:  make(chan *subscription),
+		redactions: make(RedactionFields),
 	}
 	for _, o := range opts {
 		o(s)
@@ -188,13 +192,10 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 // redactFields search through redactionMap if there's any redacted fields
 // specified that match the fields of the current event
 func (s *Server) redactFields(e *pqs.Event) {
-	tables, ok := s.redactionMap[e.GetSchema()]
-	if ok {
-		fields, ok := tables[e.GetTable()]
-		if ok {
+	if tables, ok := s.redactions[e.GetSchema()]; ok {
+		if fields, ok := tables[e.GetTable()]; ok {
 			for _, rf := range fields {
-				_, ok := e.Payload.Fields[rf]
-				if ok {
+				if _, ok := e.Payload.Fields[rf]; ok {
 					//remove field from payload
 					delete(e.Payload.Fields, rf)
 				}
