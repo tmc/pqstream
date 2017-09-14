@@ -2,7 +2,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -29,6 +31,7 @@ var (
 	remove          = flag.Bool("remove", false, "if true, remove triggers and exit")
 	grpcAddr        = flag.String("addr", ":7000", "listen addr")
 	debugAddr       = flag.String("debugaddr", ":7001", "listen debug addr")
+	redactions      = flag.String("redactions", "", "details of fields to redact in JSON format")
 )
 
 const (
@@ -54,9 +57,19 @@ func run(ctx context.Context) error {
 		return err
 	}
 
+	rfields := make(pqstream.RedactionFields)
+	if err := json.Unmarshal(bytes.NewBufferString(*redactions).Bytes(), &rfields); err != nil {
+		return err
+	}
+
 	opts := []pqstream.ServerOption{
 		pqstream.WithTableRegexp(tableRe),
 	}
+
+	if len(rfields) > 0 {
+		opts = append(opts, pqstream.WithFieldRedactions(rfields))
+	}
+
 	server, err := pqstream.NewServer(*postgresCluster, opts...)
 	if err != nil {
 		return err
