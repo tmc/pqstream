@@ -39,3 +39,18 @@ $ pqs
 {"schema":"public","table":"notes","op":"INSERT","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
 {"schema":"public","table":"notes","op":"DELETE","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
 ```
+
+
+## redact fields
+
+If there's a need to disable sensitive fields (i.e password) that get's exported the `redactions` flag can be used with `pqsd`:
+
+
+```sh
+$ pqsd -connect postgresql://user:pass@host/dbname -redactions='{"public":{"users":["password","ssn"]}}'
+```
+
+The `redactions` is in [JSON](http://json.org/) format and follows the following convention: 
+``` json
+'{"schema":{"table":["field1","field2"]}}'`
+```
