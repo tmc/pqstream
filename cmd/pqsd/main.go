@@ -2,7 +2,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"flag"
@@ -57,17 +56,19 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	rfields := make(pqstream.RedactionFields)
-	if err := json.Unmarshal(bytes.NewBufferString(*redactions).Bytes(), &rfields); err != nil {
-		return err
-	}
-
 	opts := []pqstream.ServerOption{
 		pqstream.WithTableRegexp(tableRe),
 	}
 
-	if len(rfields) > 0 {
-		opts = append(opts, pqstream.WithFieldRedactions(rfields))
+	if (len(*redactions)) > 0 {
+		rfields := make(pqstream.RedactionFields)
+		if err := json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
+			log.Fatalf("Error decoding redactions. Make sure it's in valid JSON format i.e '{\"public\":{\"users\":[\"password\",\"ssn\"]}}'  Error: %v", err)
+		}
+
+		if len(rfields) > 0 {
+			opts = append(opts, pqstream.WithFieldRedactions(rfields))
+		}
 	}
 
 	server, err := pqstream.NewServer(*postgresCluster, opts...)
