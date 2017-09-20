@@ -30,7 +30,7 @@ var (
 	remove          = flag.Bool("remove", false, "if true, remove triggers and exit")
 	grpcAddr        = flag.String("addr", ":7000", "listen addr")
 	debugAddr       = flag.String("debugaddr", ":7001", "listen debug addr")
-	redactions      = flag.String("redactions", "", "details of fields to redact in JSON format")
+	redactions      = flag.String("redactions", "", "details of fields to redact in JSON format i.e '{\"public\":{\"users\":[\"password\",\"ssn\"]}}'")
 )
 
 const (
@@ -63,7 +63,7 @@ func run(ctx context.Context) error {
 	if (len(*redactions)) > 0 {
 		rfields := make(pqstream.RedactionFields)
 		if err := json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
-			log.Fatalf("Error decoding redactions. Make sure it's in valid JSON format i.e '{\"public\":{\"users\":[\"password\",\"ssn\"]}}'  Error: %v", err)
+			return errors.Wrap(err, "decoding redactions")
 		}
 
 		if len(rfields) > 0 {

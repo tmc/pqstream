@@ -31,8 +31,8 @@ type subscription struct {
 	fn func(*pqs.Event) bool
 }
 
-// RedactionFields describes how redaction fields are specified
-// Top level map key is the schema, inner map key is the table and slice is the fields to redact
+// RedactionFields describes how redaction fields are specified.
+// Top level map key is the schema, inner map key is the table and slice is the fields to redact.
 type RedactionFields map[string]map[string][]string
 
 // Server implements PQStreamServer and manages both client connections and database event monitoring.
@@ -55,14 +55,14 @@ var _ pqs.PQStreamServer = (*Server)(nil)
 // ServerOption allows customization of a new server.
 type ServerOption func(*Server)
 
-// WithTableRegexp controls which tables are managed
+// WithTableRegexp controls which tables are managed.
 func WithTableRegexp(re *regexp.Regexp) ServerOption {
 	return func(s *Server) {
 		s.tableRe = re
 	}
 }
 
-// WithFieldRedactions controls which fields are redacted from the feed
+// WithFieldRedactions controls which fields are redacted from the feed.
 func WithFieldRedactions(r RedactionFields) ServerOption {
 	return func(s *Server) {
 		s.redactions = r
@@ -168,7 +168,7 @@ func (s *Server) removeTrigger(table string) error {
 	return err
 }
 
-// fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit
+// fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit.
 func (s *Server) fallbackLookup(e *pqs.Event) error {
 	rows, err := s.db.Query(fmt.Sprintf(sqlFetchRowById, e.Table, fallbackIdColumnType), e.Id)
 	if err != nil {
@@ -190,7 +190,7 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 }
 
 // redactFields search through redactionMap if there's any redacted fields
-// specified that match the fields of the current event
+// specified that match the fields of the current event.
 func (s *Server) redactFields(e *pqs.Event) {
 	if tables, ok := s.redactions[e.GetSchema()]; ok {
 		if fields, ok := tables[e.GetTable()]; ok {
