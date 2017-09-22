@@ -10,7 +10,7 @@ import (
 
 func TestServer_redactFields(t *testing.T) {
 
-	rfields := RedactionFields{
+	rfields := FieldRedactions{
 		"public": {"users": []string{
 			"password",
 			"email",
@@ -45,7 +45,7 @@ func TestServer_redactFields(t *testing.T) {
 	}
 
 	type args struct {
-		redactions RedactionFields
+		redactions FieldRedactions
 		incoming   *pqs.Event
 		expected   *pqs.Event
 	}

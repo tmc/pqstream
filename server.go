@@ -31,8 +31,6 @@ type subscription struct {
 	fn func(*pqs.Event) bool
 }
 
-
-
 // Server implements PQStreamServer and manages both client connections and database event monitoring.
 type Server struct {
 	l  *pq.Listener
@@ -44,7 +42,7 @@ type Server struct {
 	//subscribers map[subscriberFunc]time.Time
 	subscribe chan *subscription
 
-	redactions RedactionFields
+	redactions FieldRedactions
 }
 
 // statically assert that Server satisifes pqs.PQStreamServer
@@ -60,13 +58,11 @@ func WithTableRegexp(re *regexp.Regexp) ServerOption {
 	}
 }
 
-
-
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
 		subscribe:  make(chan *subscription),
-		redactions: make(RedactionFields),
+		redactions: make(FieldRedactions),
 	}
 	for _, o := range opts {
 		o(s)
@@ -181,8 +177,6 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 	}
 	return nil
 }
-
-
 
 // HandleEvents processes events from the database and copies them to relevent clients.
 func (s *Server) HandleEvents(ctx context.Context) error {

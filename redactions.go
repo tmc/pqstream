@@ -2,12 +2,12 @@ package pqstream
 
 import "github.com/tmc/pqstream/pqs"
 
-// RedactionFields describes how redaction fields are specified.
+// FieldRedactions describes how redaction fields are specified.
 // Top level map key is the schema, inner map key is the table and slice is the fields to redact.
-type RedactionFields map[string]map[string][]string
+type FieldRedactions map[string]map[string][]string
 
 // WithFieldRedactions controls which fields are redacted from the feed.
-func WithFieldRedactions(r RedactionFields) ServerOption {
+func WithFieldRedactions(r FieldRedactions) ServerOption {
 	return func(s *Server) {
 		s.redactions = r
 	}
