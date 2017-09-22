@@ -18,6 +18,8 @@ jobs:
 
       - run: go get github.com/jstemmer/go-junit-report
 
+      - run: go get github.com/google/go-cmp/cmp
+
       - run:
           name: Waiting for Postgres to be ready
           command: |

@@ -41,6 +41,8 @@ type Server struct {
 	//mu          sync.RWMutex // protects the following
 	//subscribers map[subscriberFunc]time.Time
 	subscribe chan *subscription
+
+	redactions FieldRedactions
 }
 
 // statically assert that Server satisifes pqs.PQStreamServer
@@ -49,7 +51,7 @@ var _ pqs.PQStreamServer = (*Server)(nil)
 // ServerOption allows customization of a new server.
 type ServerOption func(*Server)
 
-// WithTableRegexp controls which tables are managed
+// WithTableRegexp controls which tables are managed.
 func WithTableRegexp(re *regexp.Regexp) ServerOption {
 	return func(s *Server) {
 		s.tableRe = re
@@ -59,7 +61,8 @@ func WithTableRegexp(re *regexp.Regexp) ServerOption {
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
-		subscribe: make(chan *subscription),
+		subscribe:  make(chan *subscription),
+		redactions: make(FieldRedactions),
 	}
 	for _, o := range opts {
 		o(s)
@@ -154,7 +157,7 @@ func (s *Server) removeTrigger(table string) error {
 	return err
 }
 
-// fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit
+// fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit.
 func (s *Server) fallbackLookup(e *pqs.Event) error {
 	rows, err := s.db.Query(fmt.Sprintf(sqlFetchRowById, e.Table, fallbackIdColumnType), e.Id)
 	if err != nil {
@@ -194,6 +197,11 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			if err := jsonpb.UnmarshalString(ev.Extra, e); err != nil {
 				return errors.Wrap(err, "jsonpb unmarshal")
 			}
+
+			if e.Payload != nil {
+				s.redactFields(e)
+			}
+
 			if e.Payload == nil && e.Id != "" {
 				if err := s.fallbackLookup(e); err != nil {
 					log.Println("fallback lookup failed:", err)
