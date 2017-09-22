@@ -61,7 +61,7 @@ func run(ctx context.Context) error {
 	}
 
 	if (len(*redactions)) > 0 {
-		rfields := make(pqstream.RedactionFields)
+		rfields := make(pqstream.FieldRedactions)
 		if err := json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
 			return errors.Wrap(err, "decoding redactions")
 		}
