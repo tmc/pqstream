@@ -32,5 +32,7 @@ message Event {
   string id = 4;
   // payload is a json encoded representation of the changed object.
   google.protobuf.Struct payload = 5;
+  // patch is, in the event of op==UPDATE an RFC6902 JSON patch.
+  google.protobuf.Struct patch = 6;
 }
 
