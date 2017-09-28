@@ -193,13 +193,29 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 		case ev := <-events:
 			log.Println("got event:", ev)
 
-			e := &pqs.Event{}
-			if err := jsonpb.UnmarshalString(ev.Extra, e); err != nil {
+			re := &pqs.RawEvent{}
+			if err := jsonpb.UnmarshalString(ev.Extra, re); err != nil {
 				return errors.Wrap(err, "jsonpb unmarshal")
 			}
 
-			if e.Payload != nil {
-				s.redactFields(e)
+			if re.Payload != nil {
+				s.redactFields(re)
+			}
+
+			e := &pqs.Event{
+				Schema:  re.Schema,
+				Table:   re.Table,
+				Op:      re.Op,
+				Id:      re.Id,
+				Payload: re.Payload,
+			}
+
+			if re.Op == pqs.Operation_UPDATE {
+				if patch, err := generatePatch(re.Previous, re.Payload); err != nil {
+					log.Println("issue generating patch:", err)
+				} else {
+					e.Patch = patch
+				}
 			}
 
 			if e.Payload == nil && e.Id != "" {

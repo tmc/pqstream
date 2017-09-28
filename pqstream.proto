@@ -23,6 +23,16 @@ enum Operation {
   TRUNCATE = 4;
 }
 
+// RawEvent is an internal type.
+message RawEvent {
+  string schema = 1;
+  string table = 2;
+  Operation op = 3;
+  string id = 4;
+  google.protobuf.Struct payload = 5;
+  google.protobuf.Struct previous = 6;
+}
+
 // A database event.
 message Event {
   string schema = 1;
@@ -32,7 +42,7 @@ message Event {
   string id = 4;
   // payload is a json encoded representation of the changed object.
   google.protobuf.Struct payload = 5;
-  // patch is, in the event of op==UPDATE an RFC6902 JSON patch.
+  // patch is, in the event of op==UPDATE an RFC7386 JSON merge patch.
   google.protobuf.Struct patch = 6;
 }
 

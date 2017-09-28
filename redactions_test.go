@@ -23,7 +23,7 @@ func TestServer_redactFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	event := &pqs.Event{
+	event := &pqs.RawEvent{
 		Schema: "public",
 		Table:  "users",
 		Payload: &google_protobuf.Struct{
@@ -46,19 +46,25 @@ func TestServer_redactFields(t *testing.T) {
 
 	type args struct {
 		redactions FieldRedactions
-		incoming   *pqs.Event
-		expected   *pqs.Event
+		incoming   *pqs.RawEvent
+		expected   *pqs.RawEvent
 	}
 	tests := []struct {
 		name string
 		args args
 	}{
+		{"nil", args{redactions: rfields, incoming: nil}},
+		{"nil payload", args{redactions: rfields, incoming: &pqs.RawEvent{}}},
+		{"nil payload", args{redactions: rfields, incoming: &pqs.RawEvent{
+			Schema: "public",
+			Table:  "users",
+		}}},
 		{
 			name: "found",
 			args: args{
 				redactions: rfields,
 				incoming:   event,
-				expected: &pqs.Event{
+				expected: &pqs.RawEvent{
 					Schema: "public",
 					Table:  "users",
 					Payload: &google_protobuf.Struct{
@@ -89,7 +95,7 @@ func TestServer_redactFields(t *testing.T) {
 			s.redactions = tt.args.redactions
 			s.redactFields(tt.args.incoming)
 
-			if got := tt.args.incoming; !cmp.Equal(got, tt.args.expected) {
+			if got := tt.args.incoming; tt.args.expected != nil && !cmp.Equal(got, tt.args.expected) {
 				t.Errorf("s.redactFields()= %v, want %v", got, tt.args.expected)
 			}
 		})

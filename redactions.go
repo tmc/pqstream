@@ -15,13 +15,21 @@ func WithFieldRedactions(r FieldRedactions) ServerOption {
 
 // redactFields search through redactionMap if there's any redacted fields
 // specified that match the fields of the current event.
-func (s *Server) redactFields(e *pqs.Event) {
+func (s *Server) redactFields(e *pqs.RawEvent) {
 	if tables, ok := s.redactions[e.GetSchema()]; ok {
 		if fields, ok := tables[e.GetTable()]; ok {
 			for _, rf := range fields {
-				if _, ok := e.Payload.Fields[rf]; ok {
-					//remove field from payload
-					delete(e.Payload.Fields, rf)
+				if e.Payload != nil {
+					if _, ok := e.Payload.Fields[rf]; ok {
+						//remove field from payload
+						delete(e.Payload.Fields, rf)
+					}
+				}
+				if e.Previous != nil {
+					if _, ok := e.Previous.Fields[rf]; ok {
+						//remove field from previous payload
+						delete(e.Previous.Fields, rf)
+					}
 				}
 			}
 		}
