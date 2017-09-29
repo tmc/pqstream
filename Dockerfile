@@ -14,4 +14,3 @@ RUN mkdir /root/.ssh && echo "StrictHostKeyChecking no " > /root/.ssh/config
 
 RUN go get -u github.com/tmc/pqstream/cmd/pqs \
     && go get -u github.com/tmq/pqstream/cmd/pqsd
-
