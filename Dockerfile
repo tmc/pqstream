@@ -10,4 +10,3 @@ ENV PATH $PATH:/usr/local/protoc/bin
 
 RUN go get -u github.com/tmc/pqstream/cmd/pqs \
     && go get -u github.com/tmq/pqstream/cmd/pqsd
-
