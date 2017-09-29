@@ -47,3 +47,21 @@ jobs:
 
       - store_test_results:
           path: /tmp/test-results
+  image:
+    docker:
+      - image: gcr.io/cloud-builders/docker
+    working_directory: /go/src/github.com/tmc/pqstream
+    steps:
+      - checkout
+      - setup_remote_docker:
+          resuable: true
+      - run:
+          name: Build Image
+          command: |
+            docker build .
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - build
+      - image
