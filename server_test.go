@@ -166,8 +166,11 @@ func TestServer_HandleEvents(t *testing.T) {
 				t.Fatal(err)
 			}
 			s.InstallTriggers()
-			defer s.RemoveTriggers()
-			defer s.Close()
+			defer func() {
+				if err := s.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
 			go func(t *testing.T, tt testCase) {
 				if err := s.HandleEvents(ctx); (err != nil) != tt.wantErr {
 					t.Errorf("Server.HandleEvents(%v) error = %v, wantErr %v", ctx, err, tt.wantErr)
@@ -175,6 +178,9 @@ func TestServer_HandleEvents(t *testing.T) {
 			}(t, tt)
 			if tt.fn != nil {
 				tt.fn(t, s)
+			}
+			if err := s.RemoveTriggers(); err != nil {
+				t.Error(err)
 			}
 			<-ctx.Done()
 
