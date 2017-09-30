@@ -54,10 +54,21 @@ func TestServer_redactFields(t *testing.T) {
 		args args
 	}{
 		{"nil", args{redactions: rfields, incoming: nil}},
-		{"nil payload", args{redactions: rfields, incoming: &pqs.RawEvent{}}},
-		{"nil payload", args{redactions: rfields, incoming: &pqs.RawEvent{
+		{"nil_payload", args{redactions: rfields, incoming: &pqs.RawEvent{}}},
+		{"nil_payload_matching", args{redactions: rfields, incoming: &pqs.RawEvent{
 			Schema: "public",
 			Table:  "users",
+		}}},
+		{"nil_payload_nonnil_previous", args{redactions: rfields, incoming: &pqs.RawEvent{
+			Schema: "public",
+			Table:  "users",
+			Previous: &google_protobuf.Struct{
+				Fields: map[string]*google_protobuf.Value{
+					"password": &google_protobuf.Value{
+						Kind: &google_protobuf.Value_StringValue{StringValue: "password"},
+					},
+				},
+			},
 		}}},
 		{
 			name: "found",

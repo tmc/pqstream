@@ -217,6 +217,9 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 		case ev := <-events:
 			// TODO(tmc): separate case handling into method
 			s.logger.WithField("event", ev).Debugln("got event")
+			if ev == nil {
+				return errors.New("got nil event")
+			}
 
 			re := &pqs.RawEvent{}
 			if err := jsonpb.UnmarshalString(ev.Extra, re); err != nil {

@@ -16,9 +16,13 @@ import (
 var testConnectionString = "postgres://localhost?sslmode=disable"
 var testConnectionStringTemplate = "postgres://localhost/%s?sslmode=disable"
 
-var testDatabaseDDL = `create table notes (id serial, created_at timestamp, note text)`
-var testInsert = `insert into notes values (default, default, 'here is a sample note')`
-var testUpdate = `update notes set note = 'here is an updated note' where id=1`
+var (
+	testDatabaseDDL    = `create table notes (id serial, created_at timestamp, note text)`
+	testInsert         = `insert into notes values (default, default, 'here is a sample note')`
+	testInsertTemplate = `insert into notes values (default, default, '%s')`
+	testUpdate         = `update notes set note = 'here is an updated note' where id=1`
+	testUpdateTemplate = `update notes set note = 'i%s' where id=1`
+)
 
 func init() {
 	if s := os.Getenv("PQSTREAM_TEST_DB_URL"); s != "" {
@@ -63,6 +67,9 @@ func TestNewServer(t *testing.T) {
 	}{
 		{"bad", args{
 			connectionString: "this is an invalid connection string",
+		}, nil, true},
+		{"empty", args{
+			connectionString: "",
 		}, nil, true},
 		{"good", args{
 			connectionString: testConnectionString,
@@ -121,50 +128,112 @@ func testDBConn(t *testing.T, db *sql.DB, testcase string) (connectionString str
 		}
 	}
 }
+func mkString(len int, c byte) string {
+	buf := make([]byte, len)
+	for i := range buf {
+		buf[i] = c
+	}
+	return string(buf)
+}
+
+type logWriter struct {
+	*testing.T
+}
+
+func (l logWriter) Write(b []byte) (int, error) {
+	l.Log(string(b))
+	return len(b), nil
+}
+
+func loggerFromT(t *testing.T) *logrus.Logger {
+	logger := logrus.New()
+	if testing.Verbose() {
+		logger.Level = logrus.DebugLevel
+	}
+	logger.Formatter.(*logrus.TextFormatter).ForceColors = true
+	logger.Out = logWriter{t}
+	return logger
+}
 
 func TestServer_HandleEvents(t *testing.T) {
 	db := dbOrSkip(t)
-	logger := logrus.New()
-	logger.Level = logrus.DebugLevel
 	type testCase struct {
 		name    string
-		opts    []ServerOption
 		fn      func(*testing.T, *Server)
 		wantErr bool
 	}
 	tests := []testCase{
-		{"basics", []ServerOption{WithLogger(logger)}, nil, false},
-		{"basic_insert", nil, func(t *testing.T, s *Server) {
+		{"basics", nil, false},
+		{"basic_insert", func(t *testing.T, s *Server) {
 			if _, err := s.db.Exec(testInsert); err != nil {
 				t.Fatal(err)
 			}
 		}, false},
-		{"basic_insert_and_update", nil, func(t *testing.T, s *Server) {
+		{"basic_insert_and_update", func(t *testing.T, s *Server) {
 			if _, err := s.db.Exec(testInsert); err != nil {
 				t.Fatal(err)
 			}
-			time.Sleep(time.Second)
+			time.Sleep(10 * time.Millisecond)
 			if _, err := s.db.Exec(testUpdate); err != nil {
 				t.Fatal(err)
 			}
 		}, false},
 	}
+
+	mkTestCase := func(n int, alsoUpdate bool) testCase {
+		caseName := fmt.Sprintf("test_%vb_insert", n)
+		if alsoUpdate {
+			caseName += "_and_update"
+		}
+		return testCase{caseName, func(t *testing.T, s *Server) {
+			insert := fmt.Sprintf(testInsertTemplate, mkString(n, '.'))
+			s.logger.Debugln("inserting", n)
+			if _, err := s.db.Exec(insert); err != nil {
+				t.Fatal(err)
+			}
+			if alsoUpdate {
+				time.Sleep(10 % time.Millisecond)
+				update := fmt.Sprintf(testUpdateTemplate, mkString(n, '-'))
+				if _, err := s.db.Exec(update); err != nil {
+					t.Fatal(err)
+				}
+			}
+		}, false}
+	}
+
+	// TODO(tmc): encode the expected properties of the payloads in test
+	// cross the 8k boundary for inserts
+	for i := 7870; i <= 7900; i = i + 10 {
+		tests = append(tests, mkTestCase(i, false))
+	}
+	// cross the 8k boundary for updates (and drop previous payloads)
+	for i := 3890; i <= 4000; i = i + 10 {
+		tests = append(tests, mkTestCase(i, true))
+	}
+	// cross the 8k boundary for updates (and drop payloads)
+	for i := 7870; i <= 7900; i = i + 10 {
+		tests = append(tests, mkTestCase(i, true))
+	}
 	for _, tt := range tests {
+		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
 			caseName := tt.name
 			t.Parallel()
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
 			cs, cleanup := testDBConn(t, db, caseName)
 			defer cleanup()
-			s, err := NewServer(cs, tt.opts...)
+			s, err := NewServer(cs, WithLogger(loggerFromT(t)))
 			s.listenerPingInterval = time.Second // move into a helper?
 			if err != nil {
 				t.Fatal(err)
 			}
 			s.InstallTriggers()
-			defer s.RemoveTriggers()
-			defer s.Close()
+			defer func() {
+				if err := s.Close(); err != nil {
+					t.Error(err)
+				}
+			}()
 			go func(t *testing.T, tt testCase) {
 				if err := s.HandleEvents(ctx); (err != nil) != tt.wantErr {
 					t.Errorf("Server.HandleEvents(%v) error = %v, wantErr %v", ctx, err, tt.wantErr)
@@ -172,6 +241,9 @@ func TestServer_HandleEvents(t *testing.T) {
 			}(t, tt)
 			if tt.fn != nil {
 				tt.fn(t, s)
+			}
+			if err := s.RemoveTriggers(); err != nil {
+				t.Error(err)
 			}
 			<-ctx.Done()
 
