@@ -23,7 +23,7 @@ const (
 	defaultPingInterval  = 9 * time.Second
 	channel              = "pqstream_notify"
 
-	fallbackIdColumnType = "integer" // TODO(tmc) parameterize
+	fallbackIDColumnType = "integer" // TODO(tmc) parameterize
 )
 
 // subscription
@@ -193,7 +193,7 @@ func (s *Server) removeTrigger(table string) error {
 
 // fallbackLookup will be invoked if we have apparently exceeded the 8000 byte notify limit.
 func (s *Server) fallbackLookup(e *pqs.Event) error {
-	rows, err := s.db.Query(fmt.Sprintf(sqlFetchRowById, e.Table, fallbackIdColumnType), e.Id)
+	rows, err := s.db.Query(fmt.Sprintf(sqlFetchRowByID, e.Table, fallbackIDColumnType), e.Id)
 	if err != nil {
 		return errors.Wrap(err, "fallback query")
 	}
@@ -202,11 +202,53 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 		payload := ""
 		if err := rows.Scan(&payload); err != nil {
 			return errors.Wrap(err, "fallback scan")
+		}
+		e.Payload = &ptypes_struct.Struct{}
+		if err := jsonpb.UnmarshalString(payload, e.Payload); err != nil {
+			return errors.Wrap(err, "fallback unmarshal")
+		}
+	}
+	return nil
+}
+
+func (s *Server) handleEvent(subscribers map[*subscription]bool, ev *pq.Notification) error {
+	if ev == nil {
+		return errors.New("got nil event")
+	}
+
+	re := &pqs.RawEvent{}
+	if err := jsonpb.UnmarshalString(ev.Extra, re); err != nil {
+		return errors.Wrap(err, "jsonpb unmarshal")
+	}
+
+	// perform field redactions
+	s.redactFields(re)
+
+	e := &pqs.Event{
+		Schema:  re.Schema,
+		Table:   re.Table,
+		Op:      re.Op,
+		Id:      re.Id,
+		Payload: re.Payload,
+	}
+
+	if re.Op == pqs.Operation_UPDATE {
+		if patch, err := generatePatch(re.Payload, re.Previous); err != nil {
+			s.logger.WithField("event", e).WithError(err).Infoln("issue generating json patch")
 		} else {
-			e.Payload = &ptypes_struct.Struct{}
-			if err := jsonpb.UnmarshalString(payload, e.Payload); err != nil {
-				return errors.Wrap(err, "fallback unmarshal")
-			}
+			e.Changes = patch
+		}
+	}
+
+	if e.Payload == nil && e.Id != "" {
+		if err := s.fallbackLookup(e); err != nil {
+			s.logger.WithField("event", e).WithError(err).Errorln("fallback lookup failed")
+		}
+
+	}
+	for s := range subscribers {
+		if !s.fn(e) {
+			delete(subscribers, s)
 		}
 	}
 	return nil
@@ -226,45 +268,8 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 		case ev := <-events:
 			// TODO(tmc): separate case handling into method
 			s.logger.WithField("event", ev).Debugln("got event")
-			if ev == nil {
-				return errors.New("got nil event")
-			}
-
-			re := &pqs.RawEvent{}
-			if err := jsonpb.UnmarshalString(ev.Extra, re); err != nil {
-				return errors.Wrap(err, "jsonpb unmarshal")
-			}
-
-			if re.Payload != nil {
-				s.redactFields(re)
-			}
-
-			e := &pqs.Event{
-				Schema:  re.Schema,
-				Table:   re.Table,
-				Op:      re.Op,
-				Id:      re.Id,
-				Payload: re.Payload,
-			}
-
-			if re.Op == pqs.Operation_UPDATE {
-				if patch, err := generatePatch(re.Payload, re.Previous); err != nil {
-					s.logger.WithField("event", e).WithError(err).Infoln("issue generating json patch")
-				} else {
-					e.Changes = patch
-				}
-			}
-
-			if e.Payload == nil && e.Id != "" {
-				if err := s.fallbackLookup(e); err != nil {
-					s.logger.WithField("event", e).WithError(err).Errorln("fallback lookup failed")
-				}
-
-			}
-			for s := range subscribers {
-				if !s.fn(e) {
-					delete(subscribers, s)
-				}
+			if err := s.handleEvent(subscribers, ev); err != nil {
+				return err
 			}
 		case <-time.After(s.listenerPingInterval):
 			s.logger.WithField("interval", s.listenerPingInterval).Debugln("pinging")
@@ -273,7 +278,6 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			}
 		}
 	}
-	return nil
 }
 
 // Listen handles a request to listen for database events and streams them to clients.
@@ -308,5 +312,4 @@ func (s *Server) Listen(r *pqs.ListenRequest, srv pqs.PQStream_ListenServer) err
 			}
 		}
 	}
-	return nil
 }

@@ -59,7 +59,7 @@ CREATE TRIGGER pqstream_notify
 AFTER INSERT OR UPDATE OR DELETE ON %s
     FOR EACH ROW EXECUTE PROCEDURE pqstream_notify();
 `
-	sqlFetchRowById = `
+	sqlFetchRowByID = `
 	SELECT row_to_json(r)::text from (select * from %s where id = $1::%s) r;
 `
 )
