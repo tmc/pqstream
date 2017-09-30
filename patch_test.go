@@ -16,7 +16,7 @@ func Test_generatePatch(t *testing.T) {
 	tests := []struct {
 		name     string
 		args     args
-		wantJson string
+		wantJSON string
 		wantErr  bool
 	}{
 		{"nils", args{nil, nil}, "{}", false},
@@ -38,12 +38,12 @@ func Test_generatePatch(t *testing.T) {
 				t.Errorf("generatePatch() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
-			gotJson, err := (&jsonpb.Marshaler{}).MarshalToString(got)
+			gotJSON, err := (&jsonpb.Marshaler{}).MarshalToString(got)
 			if err != nil {
 				t.Error(err)
 			}
-			if !cmp.Equal(gotJson, tt.wantJson) {
-				t.Errorf("generatePatch() = %v, want %v\n%s", gotJson, tt.wantJson, cmp.Diff(gotJson, tt.wantJson))
+			if !cmp.Equal(gotJSON, tt.wantJSON) {
+				t.Errorf("generatePatch() = %v, want %v\n%s", gotJSON, tt.wantJSON, cmp.Diff(gotJSON, tt.wantJSON))
 			}
 		})
 	}

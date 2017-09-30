@@ -64,7 +64,7 @@ func run(ctx context.Context) error {
 
 	if (len(*redactions)) > 0 {
 		rfields := make(pqstream.FieldRedactions)
-		if err := json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
+		if err = json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
 			return errors.Wrap(err, "decoding redactions")
 		}
 
@@ -88,12 +88,12 @@ func run(ctx context.Context) error {
 		return err
 	}
 
-	if err := server.InstallTriggers(); err != nil {
+	if err = server.InstallTriggers(); err != nil {
 		return errors.Wrap(err, "InstallTriggers")
 	}
 
 	go func() {
-		if err := server.HandleEvents(ctx); err != nil {
+		if err = server.HandleEvents(ctx); err != nil {
 			// TODO(tmc): try to be more graceful
 			log.Fatalln(err)
 		}
