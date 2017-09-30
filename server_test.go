@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 )
 
@@ -123,6 +124,8 @@ func testDBConn(t *testing.T, db *sql.DB, testcase string) (connectionString str
 
 func TestServer_HandleEvents(t *testing.T) {
 	db := dbOrSkip(t)
+	logger := logrus.New()
+	logger.Level = logrus.DebugLevel
 	type testCase struct {
 		name    string
 		opts    []ServerOption
@@ -130,7 +133,7 @@ func TestServer_HandleEvents(t *testing.T) {
 		wantErr bool
 	}
 	tests := []testCase{
-		{"basics", nil, nil, false},
+		{"basics", []ServerOption{WithLogger(logger)}, nil, false},
 		{"basic_insert", nil, func(t *testing.T, s *Server) {
 			if _, err := s.db.Exec(testInsert); err != nil {
 				t.Fatal(err)

@@ -18,6 +18,7 @@ import (
 	_ "golang.org/x/net/trace"
 	"google.golang.org/grpc"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
 	"github.com/tmc/pqstream"
 	"github.com/tmc/pqstream/ctxutil"
@@ -25,6 +26,7 @@ import (
 )
 
 var (
+	verbose         = flag.Bool("v", false, "be verbose")
 	postgresCluster = flag.String("connect", "", "postgresql cluster address")
 	tableRegexp     = flag.String("tables", ".*", "regexp of tables to manage")
 	remove          = flag.Bool("remove", false, "if true, remove triggers and exit")
@@ -70,6 +72,11 @@ func run(ctx context.Context) error {
 			opts = append(opts, pqstream.WithFieldRedactions(rfields))
 		}
 	}
+	if *verbose {
+		l := logrus.New()
+		l.Level = logrus.DebugLevel
+		opts = append(opts, pqstream.WithLogger(l))
+	}
 
 	server, err := pqstream.NewServer(*postgresCluster, opts...)
 	if err != nil {
@@ -100,7 +107,9 @@ func run(ctx context.Context) error {
 		<-time.After(gracefulStopMaxWait)
 		s.Stop()
 	}()
-	log.Println("listening on", *grpcAddr, "and", *debugAddr)
+	if *verbose {
+		log.Println("listening on", *grpcAddr, "and", *debugAddr)
+	}
 	err = s.Serve(lis)
 	if strings.Contains(err.Error(), "use of closed network connection") {
 		// return nil for expected error from the accept loop
