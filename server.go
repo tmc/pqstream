@@ -7,8 +7,8 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
+	"github.com/sirupsen/logrus"
 
 	"github.com/lib/pq"
 	"github.com/pkg/errors"

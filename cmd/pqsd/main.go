@@ -18,8 +18,8 @@ import (
 	_ "golang.org/x/net/trace"
 	"google.golang.org/grpc"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	"github.com/tmc/pqstream"
 	"github.com/tmc/pqstream/ctxutil"
 	"github.com/tmc/pqstream/pqs"
