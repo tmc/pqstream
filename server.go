@@ -37,6 +37,7 @@ type Server struct {
 	logger logrus.FieldLogger
 	l      *pq.Listener
 	db     *sql.DB
+	ctx    context.Context
 
 	tableRe *regexp.Regexp
 
@@ -65,12 +66,20 @@ func WithLogger(l logrus.FieldLogger) ServerOption {
 	}
 }
 
+// WithContext allows supplying a custom context.
+func WithContext(ctx context.Context) ServerOption {
+	return func(s *Server) {
+		s.ctx = ctx
+	}
+}
+
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
 		subscribe:  make(chan *subscription),
 		redactions: make(FieldRedactions),
 
+		ctx:                  context.Background(),
 		listenerPingInterval: defaultPingInterval,
 	}
 	for _, o := range opts {
@@ -289,6 +298,8 @@ func (s *Server) Listen(r *pqs.ListenRequest, srv pqs.PQStream_ListenServer) err
 	}}
 	for {
 		select {
+		case <-s.ctx.Done():
+			return nil
 		case <-ctx.Done():
 			return nil
 		case e := <-events:
