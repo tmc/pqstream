@@ -131,6 +131,11 @@ func TestServer_HandleEvents(t *testing.T) {
 	}
 	tests := []testCase{
 		{"basics", nil, nil, false},
+		{"basic_insert", nil, func(t *testing.T, s *Server) {
+			if _, err := s.db.Exec(testInsert); err != nil {
+				t.Fatal(err)
+			}
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
