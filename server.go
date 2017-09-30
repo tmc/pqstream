@@ -239,10 +239,10 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			}
 
 			if re.Op == pqs.Operation_UPDATE {
-				if patch, err := generatePatch(re.Previous, re.Payload); err != nil {
+				if patch, err := generatePatch(re.Payload, re.Previous); err != nil {
 					s.logger.WithField("event", e).WithError(err).Infoln("issue generating json patch")
 				} else {
-					e.Patch = patch
+					e.Changes = patch
 				}
 			}
 
