@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
+	"net"
 	"os"
 	"regexp"
 	"testing"
@@ -11,6 +13,8 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
+	"github.com/tmc/pqstream/pqs"
+	"google.golang.org/grpc"
 )
 
 var testConnectionString = "postgres://localhost?sslmode=disable"
@@ -217,11 +221,10 @@ func TestServer_HandleEvents(t *testing.T) {
 	for _, tt := range tests {
 		tt := tt
 		t.Run(tt.name, func(t *testing.T) {
-			caseName := tt.name
 			t.Parallel()
 			ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 			defer cancel()
-			cs, cleanup := testDBConn(t, db, caseName)
+			cs, cleanup := testDBConn(t, db, tt.name)
 			defer cleanup()
 			s, err := NewServer(cs, WithLogger(loggerFromT(t)))
 			s.listenerPingInterval = time.Second // move into a helper?
@@ -247,6 +250,84 @@ func TestServer_HandleEvents(t *testing.T) {
 			}
 			<-ctx.Done()
 
+		})
+	}
+}
+
+func TestServer_Listen(t *testing.T) {
+	db := dbOrSkip(t)
+	type args struct{}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr bool
+	}{
+		{"basics", args{}, true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			defer cancel()
+
+			lis, err := net.Listen("tcp", "")
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer lis.Close()
+			srv := grpc.NewServer()
+
+			cs, cleanup := testDBConn(t, db, tt.name)
+			defer cleanup()
+			l := logrus.New()
+			l.Level = logrus.DebugLevel
+			sctx, scancel := context.WithCancel(ctx)
+			s, err := NewServer(cs, WithLogger(l), WithContext(sctx))
+
+			if err != nil {
+				t.Fatal(err)
+			}
+			s.InstallTriggers()
+			defer s.RemoveTriggers()
+			defer s.Close()
+
+			defer srv.Stop()
+			pqs.RegisterPQStreamServer(srv, s)
+			go srv.Serve(lis)
+
+			go func() {
+				defer scancel()
+				go s.HandleEvents(sctx)
+				// generate some traffic
+				time.Sleep(time.Second)
+				if _, err := s.db.Exec(testInsert); err != nil {
+					t.Fatal(err)
+				}
+				time.Sleep(time.Second)
+				if _, err := s.db.Exec(testInsert); err != nil {
+					t.Fatal(err)
+				}
+			}()
+
+			conn, err := grpc.Dial(fmt.Sprintf(":%v", lis.Addr().(*net.TCPAddr).Port), grpc.WithInsecure())
+			if err != nil {
+				t.Fatal(err)
+			}
+			c := pqs.NewPQStreamClient(conn)
+
+			client, err := c.Listen(ctx, &pqs.ListenRequest{})
+			if err != nil {
+				t.Fatal(err)
+			}
+			for {
+				ev, err := client.Recv()
+				if err != nil {
+					if err == io.EOF {
+						return
+					}
+					t.Fatal(err)
+				}
+				t.Log("got event", ev)
+			}
 		})
 	}
 }
