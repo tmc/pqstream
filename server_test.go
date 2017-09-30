@@ -64,6 +64,9 @@ func TestNewServer(t *testing.T) {
 		{"bad", args{
 			connectionString: "this is an invalid connection string",
 		}, nil, true},
+		{"empty", args{
+			connectionString: "",
+		}, nil, true},
 		{"good", args{
 			connectionString: testConnectionString,
 		}, nil, false},
