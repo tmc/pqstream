@@ -136,6 +136,15 @@ func TestServer_HandleEvents(t *testing.T) {
 				t.Fatal(err)
 			}
 		}, false},
+		{"basic_insert_and_update", nil, func(t *testing.T, s *Server) {
+			if _, err := s.db.Exec(testInsert); err != nil {
+				t.Fatal(err)
+			}
+			time.Sleep(time.Second)
+			if _, err := s.db.Exec(testUpdate); err != nil {
+				t.Fatal(err)
+			}
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
