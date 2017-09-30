@@ -90,6 +90,19 @@ func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	return s, nil
 }
 
+// Close stops the pqstream server.
+func (s *Server) Close() error {
+	errL := s.l.Close()
+	errDB := s.db.Close()
+	if errL != nil {
+		return errors.Wrap(errL, "listener")
+	}
+	if errDB != nil {
+		return errors.Wrap(errDB, "DB")
+	}
+	return nil
+}
+
 // InstallTriggers sets up triggers to start observing changes for the set of tables in the database.
 func (s *Server) InstallTriggers() error {
 	_, err := s.db.Exec(sqlTriggerFunction)

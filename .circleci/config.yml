@@ -37,6 +37,7 @@ jobs:
           name: Run unit tests
           environment:
             PQSTREAM_TEST_DB_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
+            PQSTREAM_TEST_DB_TMPL_URL: "postgres://root@localhost:5432/%s?sslmode=disable"
           command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
             ./test | tee ${TEST_RESULTS}/go-test.out
