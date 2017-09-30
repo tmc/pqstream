@@ -28,16 +28,16 @@ func TestServer_redactFields(t *testing.T) {
 		Table:  "users",
 		Payload: &google_protobuf.Struct{
 			Fields: map[string]*google_protobuf.Value{
-				"first_name": &google_protobuf.Value{
+				"first_name": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "first_name"},
 				},
-				"last_name": &google_protobuf.Value{
+				"last_name": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "last_name"},
 				},
-				"password": &google_protobuf.Value{
+				"password": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "_insecure_"},
 				},
-				"email": &google_protobuf.Value{
+				"email": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "someone@corp.com"},
 				},
 			},
@@ -64,7 +64,7 @@ func TestServer_redactFields(t *testing.T) {
 			Table:  "users",
 			Previous: &google_protobuf.Struct{
 				Fields: map[string]*google_protobuf.Value{
-					"password": &google_protobuf.Value{
+					"password": {
 						Kind: &google_protobuf.Value_StringValue{StringValue: "password"},
 					},
 				},
@@ -80,10 +80,10 @@ func TestServer_redactFields(t *testing.T) {
 					Table:  "users",
 					Payload: &google_protobuf.Struct{
 						Fields: map[string]*google_protobuf.Value{
-							"first_name": &google_protobuf.Value{
+							"first_name": {
 								Kind: &google_protobuf.Value_StringValue{StringValue: "first_name"},
 							},
-							"last_name": &google_protobuf.Value{
+							"last_name": {
 								Kind: &google_protobuf.Value_StringValue{StringValue: "last_name"},
 							},
 						},
