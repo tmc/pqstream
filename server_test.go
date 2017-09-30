@@ -186,14 +186,14 @@ func TestServer_HandleEvents(t *testing.T) {
 			caseName += "_and_update"
 		}
 		return testCase{caseName, func(t *testing.T, s *Server) {
-			insert := fmt.Sprintf(testInsertTemplate, mkString(n, 'A'))
+			insert := fmt.Sprintf(testInsertTemplate, mkString(n, '.'))
 			s.logger.Debugln("inserting", n)
 			if _, err := s.db.Exec(insert); err != nil {
 				t.Fatal(err)
 			}
 			if alsoUpdate {
 				time.Sleep(10 % time.Millisecond)
-				update := fmt.Sprintf(testUpdateTemplate, mkString(n, 'B'))
+				update := fmt.Sprintf(testUpdateTemplate, mkString(n, '-'))
 				if _, err := s.db.Exec(update); err != nil {
 					t.Fatal(err)
 				}
