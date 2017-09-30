@@ -18,6 +18,7 @@ var testConnectionStringTemplate = "postgres://localhost/%s?sslmode=disable"
 
 var testDatabaseDDL = `create table notes (id serial, created_at timestamp, note text)`
 var testInsert = `insert into notes values (default, default, 'here is a sample note')`
+var testInsertTemplate = `insert into notes values (default, default, '%s')`
 var testUpdate = `update notes set note = 'here is an updated note' where id=1`
 
 func init() {
@@ -124,6 +125,13 @@ func testDBConn(t *testing.T, db *sql.DB, testcase string) (connectionString str
 		}
 	}
 }
+func mkString(len int) string {
+	buf := make([]byte, len)
+	for i := range buf {
+		buf[i] = 'A'
+	}
+	return string(buf)
+}
 
 func TestServer_HandleEvents(t *testing.T) {
 	db := dbOrSkip(t)
@@ -148,6 +156,12 @@ func TestServer_HandleEvents(t *testing.T) {
 			}
 			time.Sleep(time.Second)
 			if _, err := s.db.Exec(testUpdate); err != nil {
+				t.Fatal(err)
+			}
+		}, false},
+		{"test_7800b_insert", nil, func(t *testing.T, s *Server) {
+			insert := fmt.Sprintf(testInsertTemplate, mkString(7800))
+			if _, err := s.db.Exec(insert); err != nil {
 				t.Fatal(err)
 			}
 		}, false},
