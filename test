@@ -1,6 +1,6 @@
 #!/bin/bash
 set -euo pipefail
-go test -v -race -coverprofile=coverage.txt -covermode=atomic || go test -v 
+go test -v -race -coverprofile=coverage.txt -covermode=atomic
 if [ -n "${CODECOV_TOKEN:-}" ]; then
   bash <(curl -s https://codecov.io/bash)
 fi
