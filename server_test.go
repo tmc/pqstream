@@ -165,6 +165,12 @@ func TestServer_HandleEvents(t *testing.T) {
 				t.Fatal(err)
 			}
 		}, false},
+		{"test_8000b_insert", nil, func(t *testing.T, s *Server) {
+			insert := fmt.Sprintf(testInsertTemplate, mkString(8000))
+			if _, err := s.db.Exec(insert); err != nil {
+				t.Fatal(err)
+			}
+		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
