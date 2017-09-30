@@ -4,10 +4,10 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
-	"log"
 	"regexp"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/golang/protobuf/jsonpb"
 
 	"github.com/lib/pq"
@@ -34,8 +34,9 @@ type subscription struct {
 
 // Server implements PQStreamServer and manages both client connections and database event monitoring.
 type Server struct {
-	l  *pq.Listener
-	db *sql.DB
+	logger logrus.FieldLogger
+	l      *pq.Listener
+	db     *sql.DB
 
 	tableRe *regexp.Regexp
 
@@ -57,6 +58,13 @@ func WithTableRegexp(re *regexp.Regexp) ServerOption {
 	}
 }
 
+// WithLogger allows attaching a custom logger.
+func WithLogger(l logrus.FieldLogger) ServerOption {
+	return func(s *Server) {
+		s.logger = l
+	}
+}
+
 // NewServer prepares a new pqstream server.
 func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
@@ -68,6 +76,9 @@ func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	for _, o := range opts {
 		o(s)
 	}
+	if s.logger == nil {
+		s.logger = logrus.StandardLogger()
+	}
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return nil, err
@@ -76,9 +87,9 @@ func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 		return nil, errors.Wrap(err, "ping")
 	}
 	s.l = pq.NewListener(connectionString, minReconnectInterval, maxReconnectInterval, func(ev pq.ListenerEventType, err error) {
-		log.Printf("listener-event: %#v\n", ev)
+		s.logger.WithField("listener-event", ev).Debugln("got listener event")
 		if err != nil {
-			log.Println("listener-event-err:", err)
+			s.logger.WithField("listener-event", ev).WithError(err).Errorln("got listener event error")
 		}
 	})
 	if err := s.l.Listen(channel); err != nil {
@@ -200,12 +211,12 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 		select {
 		case <-ctx.Done():
 			return nil
-		case s := <-s.subscribe:
-			log.Println("got subscriber")
-			subscribers[s] = true
+		case sub := <-s.subscribe:
+			s.logger.Debugln("got subscriber")
+			subscribers[sub] = true
 		case ev := <-events:
 			// TODO(tmc): separate case handling into method
-			log.Println("got event:", ev)
+			s.logger.WithField("event", ev).Debugln("got event")
 
 			re := &pqs.RawEvent{}
 			if err := jsonpb.UnmarshalString(ev.Extra, re); err != nil {
@@ -226,7 +237,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 
 			if re.Op == pqs.Operation_UPDATE {
 				if patch, err := generatePatch(re.Previous, re.Payload); err != nil {
-					log.Println("issue generating patch:", err)
+					s.logger.WithField("event", e).WithError(err).Infoln("issue generating json patch")
 				} else {
 					e.Patch = patch
 				}
@@ -234,7 +245,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 
 			if e.Payload == nil && e.Id != "" {
 				if err := s.fallbackLookup(e); err != nil {
-					log.Println("fallback lookup failed:", err)
+					s.logger.WithField("event", e).WithError(err).Errorln("fallback lookup failed")
 				}
 
 			}
@@ -244,7 +255,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 				}
 			}
 		case <-time.After(s.listenerPingInterval):
-			log.Println("pinging")
+			s.logger.WithField("interval", s.listenerPingInterval).Debugln("pinging")
 			if err := s.l.Ping(); err != nil {
 				return errors.Wrap(err, "Ping")
 			}
@@ -256,7 +267,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 // Listen handles a request to listen for database events and streams them to clients.
 func (s *Server) Listen(r *pqs.ListenRequest, srv pqs.PQStream_ListenServer) error {
 	ctx := srv.Context()
-	log.Printf("got listen request: %#v\n", r)
+	s.logger.WithField("listen-request", r).Infoln("got listen request")
 	tableRe, err := regexp.Compile(r.TableRegexp)
 	if err != nil {
 		return err
