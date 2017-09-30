@@ -20,6 +20,7 @@ import (
 const (
 	minReconnectInterval = time.Second
 	maxReconnectInterval = 10 * time.Second
+	defaultPingInterval  = 9 * time.Second
 	channel              = "pqstream_notify"
 
 	fallbackIdColumnType = "integer" // TODO(tmc) parameterize
@@ -38,11 +39,9 @@ type Server struct {
 
 	tableRe *regexp.Regexp
 
-	//mu          sync.RWMutex // protects the following
-	//subscribers map[subscriberFunc]time.Time
-	subscribe chan *subscription
-
-	redactions FieldRedactions
+	listenerPingInterval time.Duration
+	subscribe            chan *subscription
+	redactions           FieldRedactions
 }
 
 // statically assert that Server satisifes pqs.PQStreamServer
@@ -63,6 +62,8 @@ func NewServer(connectionString string, opts ...ServerOption) (*Server, error) {
 	s := &Server{
 		subscribe:  make(chan *subscription),
 		redactions: make(FieldRedactions),
+
+		listenerPingInterval: defaultPingInterval,
 	}
 	for _, o := range opts {
 		o(s)
@@ -195,7 +196,6 @@ func (s *Server) fallbackLookup(e *pqs.Event) error {
 func (s *Server) HandleEvents(ctx context.Context) error {
 	subscribers := map[*subscription]bool{}
 	events := s.l.NotificationChannel()
-	eventPingInterval := time.Second * 9
 	for {
 		select {
 		case <-ctx.Done():
@@ -204,6 +204,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 			log.Println("got subscriber")
 			subscribers[s] = true
 		case ev := <-events:
+			// TODO(tmc): separate case handling into method
 			log.Println("got event:", ev)
 
 			re := &pqs.RawEvent{}
@@ -242,7 +243,7 @@ func (s *Server) HandleEvents(ctx context.Context) error {
 					delete(subscribers, s)
 				}
 			}
-		case <-time.After(eventPingInterval):
+		case <-time.After(s.listenerPingInterval):
 			log.Println("pinging")
 			if err := s.l.Ping(); err != nil {
 				return errors.Wrap(err, "Ping")

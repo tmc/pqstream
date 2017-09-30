@@ -123,32 +123,36 @@ func testDBConn(t *testing.T, db *sql.DB, testcase string) (connectionString str
 
 func TestServer_HandleEvents(t *testing.T) {
 	db := dbOrSkip(t)
-	tests := []struct {
+	type testCase struct {
 		name    string
 		opts    []ServerOption
 		fn      func(*testing.T, *Server)
 		wantErr bool
-	}{
+	}
+	tests := []testCase{
 		{"basics", nil, nil, false},
-		{"handle_events", nil, func(t *testing.T, s *Server) {
-		}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+			caseName := tt.name
+			t.Parallel()
+			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 			defer cancel()
-			cs, cleanup := testDBConn(t, db, tt.name)
+			cs, cleanup := testDBConn(t, db, caseName)
 			defer cleanup()
 			s, err := NewServer(cs, tt.opts...)
+			s.listenerPingInterval = time.Second // move into a helper?
 			if err != nil {
 				t.Fatal(err)
 			}
+			s.InstallTriggers()
+			defer s.RemoveTriggers()
 			defer s.Close()
-			go func(t *testing.T) {
+			go func(t *testing.T, tt testCase) {
 				if err := s.HandleEvents(ctx); (err != nil) != tt.wantErr {
 					t.Errorf("Server.HandleEvents(%v) error = %v, wantErr %v", ctx, err, tt.wantErr)
 				}
-			}(t)
+			}(t, tt)
 			if tt.fn != nil {
 				tt.fn(t, s)
 			}
