@@ -30,7 +30,7 @@ CREATE OR REPLACE FUNCTION pqstream_notify() RETURNS TRIGGER AS $$
 						  'id', json_extract_path(payload, 'id')::text,
                           'payload', payload,
 						  'previous', previous);
-        IF (length(notification::text) > 8000) THEN
+        IF (length(notification::text) >= 8000) THEN
           notification = json_build_object(
                           'schema', TG_TABLE_SCHEMA,
                           'table', TG_TABLE_NAME,
@@ -38,7 +38,7 @@ CREATE OR REPLACE FUNCTION pqstream_notify() RETURNS TRIGGER AS $$
 						  'id', json_extract_path(payload, 'id')::text,
 						  'payload', payload);
         END IF;
-        IF (length(notification::text) > 8000) THEN
+        IF (length(notification::text) >= 8000) THEN
           notification = json_build_object(
                             'schema', TG_TABLE_SCHEMA,
                             'table', TG_TABLE_NAME,
