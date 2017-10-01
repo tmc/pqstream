@@ -56,6 +56,10 @@ jobs:
     steps:
       - checkout
 
+      - run: ./check_generated_code
+
+      - run: ./build
+
       - run: ./lint
 
   docker-image:

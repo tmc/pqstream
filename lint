@@ -1,9 +1,10 @@
 #!/bin/bash
 set -euo pipefail
-which -s gometalinter || go get -u gopkg.in/alecthomas/gometalinter
-which -s revgrep || go get -u github.com/bradleyfalzon/revgrep/cmd/revgrep
+command -v gometalinter /dev/null || go get github.com/alecthomas/gometalinter
+command -v revgrep > /dev/null || go get github.com/bradleyfalzon/revgrep/cmd/revgrep
 
 set +o pipefail
+gometalinter -i
 gometalinter -t --vendored-linters --cyclo-over=15 --disable-all \
   --enable=errcheck \
   --enable=vet \
