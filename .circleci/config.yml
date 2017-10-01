@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  build-and-test:
     docker:
       - image: circleci/golang:1.9
       - image: circleci/postgres
@@ -37,6 +37,7 @@ jobs:
           name: Run unit tests
           environment:
             PQSTREAM_TEST_DB_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
+            PQSTREAM_TEST_DB_TMPL_URL: "postgres://root@localhost:5432/%s?sslmode=disable"
           command: |
             trap "go-junit-report <${TEST_RESULTS}/go-test.out > ${TEST_RESULTS}/go-test-report.xml" EXIT
             ./test | tee ${TEST_RESULTS}/go-test.out
@@ -47,7 +48,21 @@ jobs:
 
       - store_test_results:
           path: /tmp/test-results
-  image:
+  lint:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/tmc/pqstream
+
+    steps:
+      - checkout
+
+      - run: ./check_generated_code
+
+      - run: ./build
+
+      - run: ./lint
+
+  docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
     working_directory: /go/src/github.com/tmc/pqstream
@@ -63,5 +78,6 @@ workflows:
   version: 2
   ci:
     jobs:
-      - build
-      - image
+      - build-and-test
+      - lint
+      - docker-image

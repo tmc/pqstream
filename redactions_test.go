@@ -23,21 +23,21 @@ func TestServer_redactFields(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	event := &pqs.Event{
+	event := &pqs.RawEvent{
 		Schema: "public",
 		Table:  "users",
 		Payload: &google_protobuf.Struct{
 			Fields: map[string]*google_protobuf.Value{
-				"first_name": &google_protobuf.Value{
+				"first_name": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "first_name"},
 				},
-				"last_name": &google_protobuf.Value{
+				"last_name": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "last_name"},
 				},
-				"password": &google_protobuf.Value{
+				"password": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "_insecure_"},
 				},
-				"email": &google_protobuf.Value{
+				"email": {
 					Kind: &google_protobuf.Value_StringValue{StringValue: "someone@corp.com"},
 				},
 			},
@@ -46,27 +46,44 @@ func TestServer_redactFields(t *testing.T) {
 
 	type args struct {
 		redactions FieldRedactions
-		incoming   *pqs.Event
-		expected   *pqs.Event
+		incoming   *pqs.RawEvent
+		expected   *pqs.RawEvent
 	}
 	tests := []struct {
 		name string
 		args args
 	}{
+		{"nil", args{redactions: rfields, incoming: nil}},
+		{"nil_payload", args{redactions: rfields, incoming: &pqs.RawEvent{}}},
+		{"nil_payload_matching", args{redactions: rfields, incoming: &pqs.RawEvent{
+			Schema: "public",
+			Table:  "users",
+		}}},
+		{"nil_payload_nonnil_previous", args{redactions: rfields, incoming: &pqs.RawEvent{
+			Schema: "public",
+			Table:  "users",
+			Previous: &google_protobuf.Struct{
+				Fields: map[string]*google_protobuf.Value{
+					"password": {
+						Kind: &google_protobuf.Value_StringValue{StringValue: "password"},
+					},
+				},
+			},
+		}}},
 		{
 			name: "found",
 			args: args{
 				redactions: rfields,
 				incoming:   event,
-				expected: &pqs.Event{
+				expected: &pqs.RawEvent{
 					Schema: "public",
 					Table:  "users",
 					Payload: &google_protobuf.Struct{
 						Fields: map[string]*google_protobuf.Value{
-							"first_name": &google_protobuf.Value{
+							"first_name": {
 								Kind: &google_protobuf.Value_StringValue{StringValue: "first_name"},
 							},
-							"last_name": &google_protobuf.Value{
+							"last_name": {
 								Kind: &google_protobuf.Value_StringValue{StringValue: "last_name"},
 							},
 						},
@@ -89,7 +106,7 @@ func TestServer_redactFields(t *testing.T) {
 			s.redactions = tt.args.redactions
 			s.redactFields(tt.args.incoming)
 
-			if got := tt.args.incoming; !cmp.Equal(got, tt.args.expected) {
+			if got := tt.args.incoming; tt.args.expected != nil && !cmp.Equal(got, tt.args.expected) {
 				t.Errorf("s.redactFields()= %v, want %v", got, tt.args.expected)
 			}
 		})
