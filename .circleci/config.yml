@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  build-and-test:
     docker:
       - image: circleci/golang:1.9
       - image: circleci/postgres
@@ -48,7 +48,17 @@ jobs:
 
       - store_test_results:
           path: /tmp/test-results
-  image:
+  lint:
+    docker:
+      - image: circleci/golang:1.9
+    working_directory: /go/src/github.com/tmc/pqstream
+
+    steps:
+      - checkout
+
+      - run: ./lint
+
+  docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
     working_directory: /go/src/github.com/tmc/pqstream
@@ -64,5 +74,6 @@ workflows:
   version: 2
   ci:
     jobs:
-      - build
-      - image
+      - build-and-test
+      - lint
+      - docker-image

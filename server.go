@@ -46,7 +46,7 @@ type Server struct {
 	redactions           FieldRedactions
 }
 
-// statically assert that Server satisifes pqs.PQStreamServer
+// statically assert that Server satisfies pqs.PQStreamServer
 var _ pqs.PQStreamServer = (*Server)(nil)
 
 // ServerOption allows customization of a new server.
@@ -254,7 +254,7 @@ func (s *Server) handleEvent(subscribers map[*subscription]bool, ev *pq.Notifica
 	return nil
 }
 
-// HandleEvents processes events from the database and copies them to relevent clients.
+// HandleEvents processes events from the database and copies them to relevant clients.
 func (s *Server) HandleEvents(ctx context.Context) error {
 	subscribers := map[*subscription]bool{}
 	events := s.l.NotificationChannel()
