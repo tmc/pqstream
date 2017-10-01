@@ -1,11 +1,14 @@
 #!/bin/bash
 set -euo pipefail
+set -x
 command -v gometalinter /dev/null || go get github.com/alecthomas/gometalinter
 command -v revgrep > /dev/null || go get github.com/bradleyfalzon/revgrep/cmd/revgrep
 
 set +o pipefail
+date
 gometalinter -i
-gometalinter -t --vendored-linters --cyclo-over=15 --disable-all \
+date
+gometalinter -j 16 -t --vendored-linters --cyclo-over=15 --disable-all \
   --enable=errcheck \
   --enable=vet \
   --enable=vetshadow \
