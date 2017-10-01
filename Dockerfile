@@ -1,4 +1,4 @@
-FROM golang:1.8.3-alpine3.6
+FROM golang:alpine
 
 RUN apk add --update openssl git openssh bash
 
@@ -8,9 +8,5 @@ RUN wget https://github.com/google/protobuf/releases/download/v3.4.0/protoc-3.4.
 
 ENV PATH $PATH:/usr/local/protoc/bin
 
-RUN echo -e "[url \"git@github.com:\"]\n\tinsteadOf = https://github.com" >> /root/.gitconfig
-
-RUN mkdir /root/.ssh && echo "StrictHostKeyChecking no " > /root/.ssh/config
-
-RUN go get -u github.com/tmc/pqstream/cmd/pqs \
-    && go get -u github.com/tmq/pqstream/cmd/pqsd
+RUN go get  github.com/tmc/pqstream/cmd/pqs \
+    && go get github.com/tmc/pqstream/cmd/pqsd
