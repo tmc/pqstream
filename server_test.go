@@ -300,11 +300,11 @@ func TestServer_Listen(t *testing.T) {
 				// generate some traffic
 				time.Sleep(time.Second)
 				if _, err := s.db.Exec(testInsert); err != nil {
-					t.Fatal(err)
+					s.logger.Error(err)
 				}
 				time.Sleep(time.Second)
 				if _, err := s.db.Exec(testInsert); err != nil {
-					t.Fatal(err)
+					s.logger.Error(err)
 				}
 			}()
 

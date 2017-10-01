@@ -22,7 +22,7 @@ func Test_generatePatch(t *testing.T) {
 		{"nils", args{nil, nil}, "{}", false},
 		{"empties", args{&ptypes_struct.Struct{}, &ptypes_struct.Struct{}}, "{}", false},
 		{"basic", args{&ptypes_struct.Struct{}, &ptypes_struct.Struct{
-			map[string]*ptypes_struct.Value{
+			Fields: map[string]*ptypes_struct.Value{
 				"foo": {
 					Kind: &ptypes_struct.Value_StringValue{
 						StringValue: "bar",
