@@ -2,7 +2,9 @@
 
 pqstream is a program that streams changes out of a postgres database with the intent of populating other systems and enabling stream processing of data sets.
 
-![ci status](https://circleci.com/gh/tmc/pqstream.svg?style=shield) ![report card](https://goreportcard.com/badge/github.com/tmc/pqstream)
+[![ci status](https://circleci.com/gh/tmc/pqstream.svg?style=shield)](https://circleci.com/gh/tmc/workflows/pqstream/tree/master) 
+[![go report card](https://goreportcard.com/badge/github.com/tmc/pqstream)](https://goreportcard.com/report/github.com/tmc/pqstream)
+[![coverage](https://codecov.io/gh/tmc/pqstream/branch/master/graph/badge.svg)](https://codecov.io/gh/tmc/pqstream)
 
 ## installation
 
@@ -11,6 +13,13 @@ go get -u github.com/tmc/pqstream/cmd/{pqs,pqsd}
 ```
 
 ## basic usage
+
+create an example database:
+
+```
+createdb dbname
+echo "create table notes (id serial, created_at timestamp, note text)" | psql dbname
+```
 
 connect the agent:
 
@@ -29,17 +38,24 @@ at this point you will see streams of database operations rendered to stdout:
 (in a psql shell):
 
 ```sql
-a=> insert into notes values (DEFAULT, DEFAULT, 'here is an example note');
+dbname=# insert into notes values (default, default, 'here is a sample note');
 INSERT 0 1
-a=> delete from notes where id=1;
+dbname=# insert into notes values (default, default, 'here is a sample note');
+INSERT 0 1
+dbname=# update notes set note = 'here is an updated note' where id=1;
+UPDATE 1
+dbname=# delete from notes where id = 1;
 DELETE 1
+dbname=#
 ```
 
 our client should now show our operations:
 ```sh
 $ pqs
-{"schema":"public","table":"notes","op":"INSERT","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
-{"schema":"public","table":"notes","op":"DELETE","payload":{"created_at":"2017-09-04T01:11:34.65629","id":1,"notes":"here is an example note"}}
+{"schema":"public","table":"notes","op":"INSERT","id":"1","payload":{"created_at":null,"id":1,"note":"here is a sample note"}}
+{"schema":"public","table":"notes","op":"INSERT","id":"2","payload":{"created_at":null,"id":2,"note":"here is a sample note"}}
+{"schema":"public","table":"notes","op":"UPDATE","id":"1","payload":{"created_at":null,"id":1,"note":"here is an updated note"},"changes":{"note":"here is a sample note"}}
+{"schema":"public","table":"notes","op":"DELETE","id":"1","payload":{"created_at":null,"id":1,"note":"here is an updated note"}}
 ```
 
 

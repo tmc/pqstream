@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+command -v gometalinter > /dev/null || go get github.com/alecthomas/gometalinter
+command -v revgrep > /dev/null || go get github.com/bradleyfalzon/revgrep/cmd/revgrep
+
+set +o pipefail
+command -v errcheck > /dev/null || gometalinter -i
+gometalinter -t --vendored-linters --cyclo-over=15 --disable-all \
+  --enable=errcheck \
+  --enable=vet \
+  --enable=vetshadow \
+  --enable=gotype \
+  --enable=deadcode \
+  --enable=gocyclo \
+  --enable=golint \
+  --enable=varcheck \
+  --enable=structcheck \
+  --enable=aligncheck \
+  --enable=errcheck \
+  --enable=megacheck \
+  --enable=dupl \
+  --enable=ineffassign \
+  --enable=interfacer \
+  --enable=unconvert \
+  --enable=goconst \
+  --enable=gas \
+  --enable=misspell \
+  "$@" 2>&1 | tee lint.out
+set -o pipefail
+
+# only error on newly introduced lint issues
+cat lint.out| revgrep master

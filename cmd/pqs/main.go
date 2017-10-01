@@ -65,5 +65,4 @@ func run(ctx context.Context) error {
 		}
 		fmt.Println()
 	}
-	return nil
 }
