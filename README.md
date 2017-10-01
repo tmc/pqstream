@@ -3,7 +3,7 @@
 pqstream is a program that streams changes out of a postgres database with the intent of populating other systems and enabling stream processing of data sets.
 
 [![ci status](https://circleci.com/gh/tmc/pqstream.svg?style=shield)](https://circleci.com/gh/tmc/workflows/pqstream/tree/master) 
-[![go report card](https://goreportcard.com/badge/github.com/tmc/pqstream)](https://codecov.io/gh/tmc/pqstream/branch/master/graph/badge.svg)
+[![go report card](https://goreportcard.com/badge/github.com/tmc/pqstream)](https://goreportcard.com/report/github.com/tmc/pqstream)
 [![coverage](https://codecov.io/gh/tmc/pqstream/branch/master/graph/badge.svg)](https://codecov.io/gh/tmc/pqstream)
 
 ## installation
