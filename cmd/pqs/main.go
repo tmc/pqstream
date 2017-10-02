@@ -15,10 +15,10 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/golang/protobuf/jsonpb"
+	_ "github.com/kardianos/minwinsvc" // import minwinsvc for windows service support
 	"github.com/pkg/errors"
 	"github.com/tmc/pqstream/ctxutil"
 	"github.com/tmc/pqstream/pqs"
-	// import minwinsvc for windows service support
 )
 
 var (
