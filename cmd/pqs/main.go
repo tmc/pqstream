@@ -18,6 +18,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tmc/pqstream/ctxutil"
 	"github.com/tmc/pqstream/pqs"
+	// import minwinsvc for windows service support
 )
 
 var (

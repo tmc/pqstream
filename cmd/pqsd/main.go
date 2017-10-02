@@ -23,6 +23,8 @@ import (
 	"github.com/tmc/pqstream"
 	"github.com/tmc/pqstream/ctxutil"
 	"github.com/tmc/pqstream/pqs"
+
+	_ "github.com/kardianos/minwinsvc" // import minwinsvc for windows service support
 )
 
 var (
