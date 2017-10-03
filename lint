@@ -5,7 +5,7 @@ command -v revgrep > /dev/null || go get github.com/bradleyfalzon/revgrep/cmd/re
 
 set +o pipefail
 command -v errcheck > /dev/null || gometalinter -i
-gometalinter -t --vendored-linters --cyclo-over=15 --disable-all \
+gometalinter -t --vendored-linters --cyclo-over=15 --deadline=2m --disable-all \
   --enable=errcheck \
   --enable=vet \
   --enable=vetshadow \
@@ -16,7 +16,6 @@ gometalinter -t --vendored-linters --cyclo-over=15 --disable-all \
   --enable=varcheck \
   --enable=structcheck \
   --enable=aligncheck \
-  --enable=errcheck \
   --enable=megacheck \
   --enable=dupl \
   --enable=ineffassign \
