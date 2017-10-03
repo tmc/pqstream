@@ -61,11 +61,11 @@ $ pqs
 
 ## field redaction
 
-If there's a need to prevent sensitive fields (i.e. password) from being exported the `redactions` flag can be used with `pqsd`:
+If there's a need to prevent sensitive fields (i.e. PII) from being exported the `redactions` flag can be used with `pqsd`:
 
 
 ```sh
-$ pqsd -connect postgresql://user:pass@host/dbname -redactions='{"public":{"users":["password","first_name","last_name","email"]}}'
+$ pqsd -connect postgresql://user:pass@host/dbname -redactions='{"public":{"users":["first_name","last_name","email"]}}'
 ```
 
 The `redactions` is encoded in [JSON](http://json.org/) and conforms to the following layout: 
