@@ -51,10 +51,9 @@ func main() {
 }
 
 func run(ctx context.Context) error {
-	err := agent.Listen(agent.Options{
+	if err := agent.Listen(agent.Options{
 		ShutdownCleanup: true,
-	})
-	if err != nil {
+	}); err != nil {
 		return err
 	}
 
