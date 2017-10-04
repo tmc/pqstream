@@ -51,6 +51,7 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	// starts the gops diagnostics agent
 	if err := agent.Listen(agent.Options{
 		ShutdownCleanup: true,
 	}); err != nil {
