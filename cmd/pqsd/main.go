@@ -18,6 +18,7 @@ import (
 	_ "golang.org/x/net/trace"
 	"google.golang.org/grpc"
 
+	"github.com/google/gops/agent"
 	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	"github.com/tmc/pqstream"
@@ -50,6 +51,13 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	// starts the gops diagnostics agent
+	if err := agent.Listen(agent.Options{
+		ShutdownCleanup: true,
+	}); err != nil {
+		return err
+	}
+
 	lis, err := net.Listen("tcp", *grpcAddr)
 	if err != nil {
 		return err
