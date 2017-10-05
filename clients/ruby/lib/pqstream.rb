@@ -1,5 +1,9 @@
 require "pqstream/version"
 
-module Pqstream
-  # Your code goes here...
+module PQStream
+  class Client
+    def initialize(addr)
+      @addr = addr
+    end
+  end
 end

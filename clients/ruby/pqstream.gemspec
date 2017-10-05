@@ -6,7 +6,7 @@ Gem::Specification.new do |s|
   s.description = ''
   s.authors     = ['']
   s.email       = ''
-  s.files       = ['lib/pqstream.rb']
+  s.files       = ['lib/pqstream.rb', 'lib/pqstream/version.rb']
   s.homepage    = 'http://github.com/tmc/pqstream'
   s.license     = 'ISC'
 end
