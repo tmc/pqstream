@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import pqstream_pb2_grpc
 import pqstream_pb2
 import grpc
@@ -9,5 +11,6 @@ request = pqstream_pb2.ListenRequest()
 request.table_regexp = ".*"
 
 for event in stub.Listen(request):
+  print("Received change, payload follows:")
   print(event.payload)
 
