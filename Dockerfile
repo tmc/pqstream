@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-RUN apk add --update git
+COPY . /go/src/github.com/tmc/pqstream
 
-RUN go get  github.com/tmc/pqstream/cmd/pqs \
-    && go get github.com/tmc/pqstream/cmd/pqsd
+RUN go install github.com/tmc/pqstream/cmd/pqs \
+    && go install github.com/tmc/pqstream/cmd/pqsd
