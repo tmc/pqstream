@@ -62,6 +62,16 @@ jobs:
 
       - run: ./lint
 
+  python:
+    docker:
+      - image: circleci/python:3
+    steps:
+      - checkout
+
+      - run: sudo pip install pylint grpcio protobuf
+
+      - run: pylint clients/python/example.py
+
   docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
@@ -81,3 +91,4 @@ workflows:
       - build-and-test
       - lint
       - docker-image
+      - python
