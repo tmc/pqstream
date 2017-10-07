@@ -61,7 +61,7 @@ jobs:
       - run: ./build
 
       - run: ./lint
-  python:
+  clients-python:
     docker:
       - image: circleci/python:3
       - image: circleci/postgres
@@ -78,7 +78,6 @@ jobs:
 
       - run: cd clients; make deps
 
-<<<<<<< HEAD
       - run: ./install-go
 
       - run: ./check_generated_code
@@ -112,7 +111,7 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
-  ruby:
+  clients-ruby:
     docker:
       - image: circleci/ruby
     steps:
@@ -138,5 +137,5 @@ workflows:
       - build-and-test
       - lint
       - docker-image
-      - python
-      - ruby
+      - clients-python
+      - clients-ruby
