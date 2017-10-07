@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 Gem::Specification.new do |s|
   s.name        = 'pqstream'
   s.version     = '0.0.1'
-  #s.date        = ''
+  # s.date        = ''
   s.summary     = ''
   s.description = ''
   s.authors     = ['']
