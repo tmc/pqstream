@@ -12,7 +12,7 @@ module Pqs
       end
 
       def listen(opts = { table_regexp: '.*' })
-        @stub.listen(Pqs::ListenRequest(opts))
+        @stub.listen(Pqs::ListenRequest.new(opts))
       end
     end
   end
