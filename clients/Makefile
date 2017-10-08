@@ -12,4 +12,3 @@ python:
 .PHONY: ruby
 ruby:
 	$(MAKE) -C ruby
-

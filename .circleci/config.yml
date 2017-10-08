@@ -117,7 +117,9 @@ jobs:
     steps:
       - checkout
 
-      - run: cd clients/ruby; make deps gem lint
+      - run: cd clients; make deps
+
+      - run: cd clients/ruby; make deps generate gem lint
   docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
