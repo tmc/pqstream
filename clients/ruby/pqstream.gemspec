@@ -11,4 +11,6 @@ Gem::Specification.new do |s|
   s.files       = ['lib/pqstream.rb', 'lib/pqstream/version.rb']
   s.homepage    = 'http://github.com/tmc/pqstream'
   s.license     = 'ISC'
+
+  s.add_runtime_dependency 'grpc', '~> 1'
 end
