@@ -1,0 +1,4 @@
+AllCops:
+  Exclude:
+    - 'lib/pqstream_pb.rb'
+    - 'lib/pqstream_services_pb.rb'

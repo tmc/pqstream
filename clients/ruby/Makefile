@@ -1,8 +1,8 @@
 all: gem
 
 generate:
-	protoc --version
-	protoc -I ../.. -I ../../../../.. --ruby_out=./lib --grpc_out=./lib --plugin=protoc-gen-grpc=`which grpc_ruby_plugin` ../../pqstream.proto
+	grpc_tools_ruby_protoc -I ../.. -I ../../../../.. --ruby_out=lib --grpc_out=lib ../../pqstream.proto
+	./protoc-fixup
 
 deps:
 	bundle install

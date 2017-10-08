@@ -1,0 +1,3 @@
+#!/bin/bash
+sed=$(which gsed || which sed)
+${sed} -i 's/github.com\/golang\/protobuf\/ptypes\/struct\/struct_pb/google\/protobuf\/well_known_types/' lib/pqstream_pb.rb
