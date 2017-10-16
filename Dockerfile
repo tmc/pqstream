@@ -10,4 +10,8 @@ RUN go get -v github.com/tmc/pqstream/cmd/pqs \
 RUN go install github.com/tmc/pqstream/cmd/pqs \
     && go install github.com/tmc/pqstream/cmd/pqsd
 
-CMD ["pqsd"]
+ENV PATH $PATH:$GOPATH/bin
+
+EXPOSE 7000
+
+ENTRYPOINT ["pqsd"]
