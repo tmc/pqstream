@@ -11,6 +11,7 @@ import (
 
 	_ "net/http/pprof"
 
+	"github.com/google/gops/agent"
 	_ "golang.org/x/net/trace"
 	"google.golang.org/grpc"
 
@@ -36,6 +37,13 @@ func main() {
 }
 
 func run(ctx context.Context) error {
+	// starts the gops diagnostics agent
+	if err := agent.Listen(agent.Options{
+		ShutdownCleanup: true,
+	}); err != nil {
+		return err
+	}
+
 	conn, err := grpc.DialContext(ctx, *pqsdAddr, grpc.WithInsecure())
 	if err != nil {
 		return errors.Wrap(err, "dial")
