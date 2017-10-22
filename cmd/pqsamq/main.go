@@ -28,8 +28,8 @@ var (
 	pqsdAddr      = flag.String("connect", ":7000", "pqsd address")
 	tableRegexp   = flag.String("tables", ".*", "regexp of tables to match")
 	debugAddr     = flag.String("debugaddr", ":7001", "listen debug addr")
-	activeMqAddr  = flag.String("amqaddr", "", "ActiveMq server to send messages to")
-	actvieMqQueue = flag.String("amqqueue", "", "ActiveMq queue to send messages to")
+	activeMqAddr  = flag.String("amqaddr", "localhost:61613", "ActiveMq server to send messages to")
+	actvieMqQueue = flag.String("amqqueue", "/queue/test", "ActiveMq queue to send messages to")
 )
 
 func main() {
