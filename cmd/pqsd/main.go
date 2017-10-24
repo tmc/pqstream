@@ -3,7 +3,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -73,8 +72,8 @@ func run(ctx context.Context) error {
 	}
 
 	if (len(*redactions)) > 0 {
-		rfields := make(pqstream.FieldRedactions)
-		if err = json.NewDecoder(strings.NewReader(*redactions)).Decode(&rfields); err != nil {
+		rfields, err := pqstream.DecodeRedactions(*redactions)
+		if err != nil {
 			return errors.Wrap(err, "decoding redactions")
 		}
 

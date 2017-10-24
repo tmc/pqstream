@@ -112,3 +112,41 @@ func TestServer_redactFields(t *testing.T) {
 		})
 	}
 }
+
+func TestDecodeRedactions(t *testing.T) {
+	type args struct {
+		r string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    FieldRedactions
+		wantErr bool
+	}{
+		{
+			name: "basic",
+			args: args{r: `{"public":{"users":["first_name","last_name","email"]}}`},
+			want: FieldRedactions{
+				"public": {"users": []string{
+					"first_name",
+					"last_name",
+					"email",
+				},
+				},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := DecodeRedactions(tt.args.r)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("DecodeRedactions() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !cmp.Equal(got, tt.want) {
+				t.Errorf("DecodeRedactions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

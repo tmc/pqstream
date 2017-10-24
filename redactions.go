@@ -1,10 +1,25 @@
 package pqstream
 
-import "github.com/tmc/pqstream/pqs"
+import (
+	"encoding/json"
+	"strings"
+
+	"github.com/tmc/pqstream/pqs"
+)
 
 // FieldRedactions describes how redaction fields are specified.
 // Top level map key is the schema, inner map key is the table and slice is the fields to redact.
 type FieldRedactions map[string]map[string][]string
+
+// DecodeRedactions returns a FieldRedactions map decoded from redactions specified in json format.
+func DecodeRedactions(r string) (FieldRedactions, error) {
+	rfields := make(FieldRedactions)
+	if err := json.NewDecoder(strings.NewReader(r)).Decode(&rfields); err != nil {
+		return nil, err
+	}
+
+	return rfields, nil
+}
 
 // WithFieldRedactions controls which fields are redacted from the feed.
 func WithFieldRedactions(r FieldRedactions) ServerOption {
