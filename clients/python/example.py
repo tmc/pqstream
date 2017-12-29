@@ -8,9 +8,9 @@ line, 100 messages and then exits. The payload of the messages will be
 printed to stdout.
 """
 
+import grpc
 import pqstream_pb2_grpc
 import pqstream_pb2
-import grpc
 
 def run(messages):
     """process a set number of messages"""
