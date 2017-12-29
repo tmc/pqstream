@@ -1,0 +1,14 @@
+{
+	"comment": "",
+	"ignore": "test",
+	"package": [
+		{
+			"checksumSHA1": "mIlVmok2pb5Xiw5i4V/QUdNmbfY=",
+			"path": "github.com/golang/protobuf",
+			"revision": "1e59b77b52bf8e4b449a57e6f79f21226d571845",
+			"revisionTime": "2017-11-13T18:07:20Z",
+			"tree": true
+		}
+	],
+	"rootPath": "github.com/tmc/pqstream"
+}
