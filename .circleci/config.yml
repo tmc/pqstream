@@ -113,7 +113,7 @@ jobs:
 
   clients-ruby:
     docker:
-      - image: circleci/ruby
+      - image: circleci/ruby:2.4
     steps:
       - checkout
 
