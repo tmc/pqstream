@@ -9,16 +9,16 @@ pqstream is a program that streams changes out of a postgres database with the i
 ## installation
 
 ```sh
-go get -u github.com/tmc/pqstream/cmd/{pqs,pqsd}
+$ go get -u github.com/tmc/pqstream/cmd/{pqs,pqsd}
 ```
 
 ## basic usage
 
 create an example database:
 
-```
-createdb dbname
-echo "create table notes (id serial, created_at timestamp, note text)" | psql dbname
+```sh
+$ createdb dbname
+# echo "create table notes (id serial, created_at timestamp, note text)" | psql dbname
 ```
 
 connect the agent:
