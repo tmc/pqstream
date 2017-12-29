@@ -68,9 +68,9 @@ jobs:
     steps:
       - checkout
 
-      - run: sudo pip install pylint grpcio protobuf
+      - run: sudo pip -r clients/python/requirements.txt
 
-      - run: pylint clients/python/example.py
+      - run: cd clients/python; make lint
 
   docker-image:
     docker:
