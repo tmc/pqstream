@@ -68,9 +68,9 @@ jobs:
     steps:
       - checkout
 
-      - run: sudo pip -r clients/python/requirements.txt
+      - run: cd clients/python; make deps
 
-      - run: cd clients/python; make lint
+      - run: cd clients/python; make generate lint
 
   docker-image:
     docker:

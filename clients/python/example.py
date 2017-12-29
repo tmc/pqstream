@@ -22,7 +22,6 @@ def run(messages):
 
     i = 0
     for event in stub.Listen(request):
-        print("Received change, payload follows:")
         print("OP: {0}".format(event.op))
         print("Table: {0}.{1}".format(event.schema, event.table))
         print(event.payload)
