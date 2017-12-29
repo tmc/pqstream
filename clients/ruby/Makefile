@@ -1,7 +1,7 @@
 all: gem
 
 generate:
-	grpc_tools_ruby_protoc -I ../.. -I ../../../../.. --ruby_out=lib --grpc_out=lib ../../pqstream.proto
+	grpc_tools_ruby_protoc -I ../.. -I ../../vendor -I ../../../../.. --ruby_out=lib --grpc_out=lib ../../pqstream.proto
 	./protoc-fixup
 
 deps:
