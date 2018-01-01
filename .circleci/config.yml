@@ -61,8 +61,7 @@ jobs:
       - run: ./build
 
       - run: ./lint
-
-  python:
+  clients-python:
     docker:
       - image: circleci/python:3
       - image: circleci/postgres
@@ -112,6 +111,18 @@ jobs:
       - store_test_results:
           path: /tmp/test-results
 
+  clients-ruby:
+    docker:
+      - image: circleci/ruby:2.4
+    steps:
+      - checkout
+
+      - run: cd clients; make deps
+
+      - run: cd clients/ruby; make deps generate gem lint
+
+      - run: cd clients/ruby; make test
+
   docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
@@ -131,4 +142,5 @@ workflows:
       - build-and-test
       - lint
       - docker-image
-      - python
+      - clients-python
+      - clients-ruby

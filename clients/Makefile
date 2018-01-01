@@ -5,10 +5,10 @@ deps:
 	./install-protobuf
 	sudo ldconfig
 
-.PHONY: ruby
-ruby:
-	$(MAKE) -C ruby
-
 .PHONY: python
 python:
 	$(MAKE) -C python
+
+.PHONY: ruby
+ruby:
+	$(MAKE) -C ruby
