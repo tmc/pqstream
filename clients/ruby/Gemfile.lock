@@ -9,6 +9,9 @@ GEM
   specs:
     addressable (2.5.2)
       public_suffix (>= 2.0.2, < 4.0)
+    ast (2.3.0)
+    diff-lcs (1.3)
+    docile (1.1.5)
     faraday (0.13.1)
       multipart-post (>= 1.2, < 3)
     google-protobuf (3.4.1.1)
@@ -27,6 +30,7 @@ GEM
       googleapis-common-protos-types (~> 1.0.0)
       googleauth (~> 0.5.1)
     grpc-tools (1.6.6)
+    json (2.1.0)
     jwt (1.5.6)
     little-plugger (1.1.4)
     logging (2.2.2)
@@ -36,12 +40,44 @@ GEM
     multi_json (1.12.2)
     multipart-post (2.0.0)
     os (0.9.6)
+    parallel (1.12.1)
+    parser (2.4.0.2)
+      ast (~> 2.3)
+    powerpack (0.1.1)
     public_suffix (3.0.0)
+    rainbow (3.0.0)
+    rspec (3.7.0)
+      rspec-core (~> 3.7.0)
+      rspec-expectations (~> 3.7.0)
+      rspec-mocks (~> 3.7.0)
+    rspec-core (3.7.0)
+      rspec-support (~> 3.7.0)
+    rspec-expectations (3.7.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.7.0)
+    rspec-mocks (3.7.0)
+      diff-lcs (>= 1.2.0, < 2.0)
+      rspec-support (~> 3.7.0)
+    rspec-support (3.7.0)
+    rubocop (0.52.1)
+      parallel (~> 1.10)
+      parser (>= 2.4.0.2, < 3.0)
+      powerpack (~> 0.1)
+      rainbow (>= 2.2.2, < 4.0)
+      ruby-progressbar (~> 1.7)
+      unicode-display_width (~> 1.0, >= 1.0.1)
+    ruby-progressbar (1.9.0)
     signet (0.7.3)
       addressable (~> 2.3)
       faraday (~> 0.9)
       jwt (~> 1.5)
       multi_json (~> 1.10)
+    simplecov (0.15.1)
+      docile (~> 1.1.0)
+      json (>= 1.8, < 3)
+      simplecov-html (~> 0.10.0)
+    simplecov-html (0.10.2)
+    unicode-display_width (1.3.0)
 
 PLATFORMS
   ruby
@@ -49,6 +85,9 @@ PLATFORMS
 DEPENDENCIES
   grpc-tools (~> 1)
   pqstream!
+  rspec
+  rubocop
+  simplecov
 
 BUNDLED WITH
    1.14.6

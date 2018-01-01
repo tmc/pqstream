@@ -120,6 +120,9 @@ jobs:
       - run: cd clients; make deps
 
       - run: cd clients/ruby; make deps generate gem lint
+
+      - run: cd clients/ruby; make test
+
   docker-image:
     docker:
       - image: gcr.io/cloud-builders/docker
