@@ -19,4 +19,5 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency 'grpc', '~> 1'
   s.add_development_dependency 'grpc-tools', '~> 1'
+  s.add_development_dependency 'rubocop'
 end
