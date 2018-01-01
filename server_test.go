@@ -358,3 +358,49 @@ func TestServer_Listen(t *testing.T) {
 		})
 	}
 }
+
+func TestServer_Triggers(t *testing.T) {
+	db := dbOrSkip(t)
+	tests := []struct {
+		name           string
+		re             string
+		nTimes         int
+		dropBetween    bool
+		wantInstallErr bool
+		wantRemoveErr  bool
+	}{
+		{"basic", ".*", 1, false, false, false},
+		{"basic_nomatch", "nomatch", 1, false, true, false},
+		{"basic_drop", ".*", 2, true, false, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cs, cleanup := testDBConn(t, db, tt.name)
+			defer cleanup()
+			s, err := NewServer(cs, WithTableRegexp(regexp.MustCompile(tt.re)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer s.Close()
+			if err = s.InstallTriggers(); (err != nil) != tt.wantInstallErr {
+				t.Errorf("Server.InstallTriggers() error = %v, wantErr %v", err, tt.wantInstallErr)
+				return
+			}
+			for i := 0; i < tt.nTimes; i++ {
+				t.Log(i)
+				if tt.dropBetween && i > 0 {
+					_, err := s.db.Exec("drop table notes")
+					if err != nil {
+						t.Log(err)
+					}
+				}
+				err = s.RemoveTriggers()
+				t.Log("remove:", err)
+				if i == tt.nTimes-1 && (err != nil) != tt.wantRemoveErr {
+					t.Errorf("Server.RemoveTriggers() error = %v, wantErr %v", err, tt.wantRemoveErr)
+				}
+			}
+
+		})
+	}
+}
