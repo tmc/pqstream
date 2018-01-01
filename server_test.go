@@ -5,8 +5,10 @@ import (
 	"database/sql"
 	"fmt"
 	"io"
+	"log"
 	"net"
 	"os"
+	"os/exec"
 	"regexp"
 	"testing"
 	"time"
@@ -254,19 +256,28 @@ func TestServer_HandleEvents(t *testing.T) {
 	}
 }
 
+const integrationExec = "TEST_INTEGRATION_EXEC_ENV"
+
 func TestServer_Listen(t *testing.T) {
 	db := dbOrSkip(t)
-	type args struct{}
+	type args struct {
+		NInserts           int
+		IntegrationExecEnv string
+	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"basics", args{}, true},
+		{"basics", args{NInserts: 2}, true},
+		{"python_integration", args{
+			NInserts:           10,
+			IntegrationExecEnv: "TEST_PYTHON_INTEGRATION_EXEC",
+		}, true},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), time.Duration(tt.args.NInserts+1)*time.Second)
 			defer cancel()
 
 			lis, err := net.Listen("tcp", "")
@@ -274,6 +285,7 @@ func TestServer_Listen(t *testing.T) {
 				t.Fatal(err)
 			}
 			defer lis.Close()
+			port := lis.Addr().(*net.TCPAddr).Port
 			srv := grpc.NewServer()
 
 			cs, cleanup := testDBConn(t, db, tt.name)
@@ -294,21 +306,36 @@ func TestServer_Listen(t *testing.T) {
 			pqs.RegisterPQStreamServer(srv, s)
 			go srv.Serve(lis)
 
+			// if the case supplies an integration client to run, start it.
+			if tt.args.IntegrationExecEnv != "" {
+				integrationExec := os.Getenv(tt.args.IntegrationExecEnv)
+				t.Log("intergration exec", integrationExec)
+				cmd := exec.Command("sh", []string{"-c", integrationExec}...)
+				cmd.Env = os.Environ()
+				cmd.Env = append(cmd.Env, fmt.Sprintf("PORT=%v", port))
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				go func() {
+					if err := cmd.Run(); err != nil {
+						t.Fatal(err)
+					}
+				}()
+			}
+
 			go func() {
 				defer scancel()
 				go s.HandleEvents(sctx)
 				// generate some traffic
-				time.Sleep(time.Second)
-				if _, err := s.db.Exec(testInsert); err != nil {
-					s.logger.Error(err)
-				}
-				time.Sleep(time.Second)
-				if _, err := s.db.Exec(testInsert); err != nil {
-					s.logger.Error(err)
+				for i := 0; i < tt.args.NInserts; i++ {
+					log.Println("inserting", i)
+					time.Sleep(time.Second)
+					if _, err := s.db.Exec(testInsert); err != nil {
+						s.logger.Error(err)
+					}
 				}
 			}()
 
-			conn, err := grpc.Dial(fmt.Sprintf(":%v", lis.Addr().(*net.TCPAddr).Port), grpc.WithInsecure())
+			conn, err := grpc.Dial(fmt.Sprintf(":%v", port), grpc.WithInsecure())
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -1,0 +1,9 @@
+#!/bin/bash
+set -euo pipefail
+set -x
+which protoc && exit 0
+version=${PROTOBUF_VERSION:-3.4.0}
+mkdir ~/protobuf || echo
+cd ~/protobuf
+curl -LO "https://github.com/google/protobuf/releases/download/v${version}/protoc-${version}-linux-x86_64.zip"
+unzip protoc*zip -d ~/protobuf

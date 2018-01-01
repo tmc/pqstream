@@ -65,12 +65,52 @@ jobs:
   python:
     docker:
       - image: circleci/python:3
+      - image: circleci/postgres
+        environment:
+          POSTGRES_USER: root
+          POSTGRES_DB: circle_test
+    working_directory: /home/circleci/go/src/github.com/tmc/pqstream
     steps:
       - checkout
 
-      - run: sudo pip install pylint grpcio protobuf
+      - run: echo 'export PATH=$HOME/go/bin:$PATH' >> $BASH_ENV
+      - run: echo 'export PATH=$HOME/goroot/bin:$PATH' >> $BASH_ENV
+      - run: echo 'export PATH=$HOME/protobuf/bin:$PATH' >> $BASH_ENV
 
-      - run: pylint clients/python/example.py
+      - run: cd clients; make deps
+
+      - run: ./install-go
+
+      - run: ./check_generated_code
+
+      - run: ./build
+
+      - run: cd clients/python; sudo make deps
+
+      - run:
+          name: Waiting for Postgres to be ready
+          command: |
+            for i in `seq 1 10`;
+            do
+              nc -z localhost 5432 && echo Success && exit 0
+              echo -n .
+              sleep 1
+            done
+            echo Failed waiting for Postgres && exit 1
+
+      - run:
+          name: Run tests
+          environment:
+            PQSTREAM_TEST_DB_URL: "postgres://root@localhost:5432/circle_test?sslmode=disable"
+            PQSTREAM_TEST_DB_TMPL_URL: "postgres://root@localhost:5432/%s?sslmode=disable"
+          command: cd clients/python; make generate lint test
+
+      - store_artifacts:
+          path: /tmp/test-results
+          destination: raw-test-output
+
+      - store_test_results:
+          path: /tmp/test-results
 
   docker-image:
     docker:
