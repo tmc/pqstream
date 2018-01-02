@@ -1,2 +1,0 @@
-gem build pqstream.gemspec  && gem install pqstream-0.0.1.gem && ruby basic_test.rb
-
