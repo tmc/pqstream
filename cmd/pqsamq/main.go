@@ -66,7 +66,12 @@ func run(ctx context.Context) error {
 	}()
 	go http.ListenAndServe(*debugAddr, nil)
 
-	// TODO(tmc): add format flag to control output (probably offer text/template)
+	amqConn, err := stomp.Dial("tcp", *activeMqAddr)
+	if err != nil {
+		return errors.Wrap(err, "dialing amqp address failed")
+	}
+	defer amqConn.Disconnect()
+
 	m := &jsonpb.Marshaler{}
 	for {
 		ev, err := c.Recv()
@@ -78,7 +83,7 @@ func run(ctx context.Context) error {
 			if err != nil {
 				return err
 			}
-			if err := sendToActiveMq(message); err != nil {
+			if err := amqConn.Send(*actvieMqQueue, "text/plain", []byte(message)); err != nil {
 				return err
 			}
 		}
@@ -87,20 +92,4 @@ func run(ctx context.Context) error {
 		}
 		fmt.Println()
 	}
-}
-
-func sendToActiveMq(messge string) error {
-	conn, err := stomp.Dial("tcp", *activeMqAddr)
-
-	if err != nil {
-		return err
-	}
-	defer conn.Disconnect()
-
-	err = conn.Send(*actvieMqQueue, "text/plain", []byte(messge))
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
