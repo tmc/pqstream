@@ -1,0 +1,5 @@
+#!/bin/bash
+set -euo pipefail
+wget https://redirector.gvt1.com/edgedl/go/go1.9.2.linux-amd64.tar.gz
+tar xf go*tar.gz
+mv go "$HOME/goroot"
