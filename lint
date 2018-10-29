@@ -13,7 +13,6 @@ gometalinter -t --vendored-linters --cyclo-over=15 --deadline=2m --disable-all \
   --enable=deadcode \
   --enable=gocyclo \
   --enable=golint \
-  --enable=varcheck \
   --enable=structcheck \
   --enable=aligncheck \
   --enable=megacheck \
