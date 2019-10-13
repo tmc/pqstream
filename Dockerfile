@@ -17,8 +17,8 @@ RUN go install github.com/tmc/pqstream/cmd/pqs \
 
 FROM alpine
 
-RUN adduser -S -D -H -h /app appuser &&
-    mkdir /app &&
+RUN adduser -S -D -H -h /app appuser && \
+    mkdir /app && \
     chown appuser:nogroup /app
 
 USER appuser
