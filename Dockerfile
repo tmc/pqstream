@@ -9,7 +9,7 @@ COPY . /go/src/github.com/tmc/pqstream
 RUN go get -v github.com/tmc/pqstream/cmd/pqs \
     && go get -v github.com/tmc/pqstream/cmd/pqsd
 
-RUN mkdir -p $B{UILD_PATH}
+RUN mkdir -p ${BUILD_PATH}
 ENV GOBIN ${BUILD_PATH}
 
 RUN go install github.com/tmc/pqstream/cmd/pqs \
